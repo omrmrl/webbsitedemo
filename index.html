@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pinterest Style Notes</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</head>
+<body>
+  <header>
+    <nav>
+      <ul class="nav-left">
+        <li><a href="#" onclick="showSection('home')">Home</a></li>
+        <li><a href="#" onclick="showSection('share')">Share Note</a></li>
+        <li><a href="#" onclick="showSection('about')">About</a></li>
+      </ul>
+      <div class="nav-right">
+        <button id="connectWallet" class="wallet-button">Connect Wallet</button>
+        <div class="wallet-dropdown">
+          <span id="walletAddress" class="wallet-address"></span>
+          <div class="dropdown-content">
+            <button id="disconnectWallet" class="disconnect-button">Disconnect Wallet</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div class="container">
+    <!-- Home Section -->
+    <div id="home" class="section">
+      <div class="sort-options">
+        <select id="sortSelect" onchange="sortNotes(this.value)">
+          <option value="latest">Latest</option>
+          <option value="liked">Most Liked</option>
+        </select>
+      </div>
+      <div id="notesList" class="notes-grid"></div>
+      <div class="load-more">
+        <button id="loadMoreBtn" onclick="loadMore()">Load More</button>
+      </div>
+    </div>
+
+    <!-- Share Section -->
+    <div id="share" class="section" style="display: none;">
+      <h1>Share Note</h1>
+      <div id="shareForm">
+        <textarea id="noteInput" placeholder="Write your note (max 280 characters)" maxlength="280"></textarea>
+        <button id="shareNote">Share</button>
+      </div>
+      <div id="walletWarning" class="wallet-warning">
+        Please connect your wallet to share notes
+      </div>
+    </div>
+
+    <!-- About Section -->
+    <div id="about" class="section" style="display: none;">
+      <h1>About</h1>
+      <div class="about-content">
+        <!-- About içeriği daha sonra eklenecek -->
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
