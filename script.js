@@ -40,7 +40,7 @@ const notesPerPage = 20;
 let votedNotes = new Set();
 
 // Solana bağlantı ve transfer ayarları
-const SOLANA_NETWORK = 'mainnet-beta';
+const SOLANA_NETWORK = 'devnet'; // Test için devnet kullanıyoruz
 const RECEIVER_ADDRESS = 'YOUR_RECEIVER_WALLET_ADDRESS'; // Buraya kendi cüzdan adresinizi yazın
 const NOTE_COST = 0.01; // SOL cinsinden ücret
 
@@ -65,7 +65,8 @@ function loadFromLocalStorage() {
     if (savedNotes) {
       const loadedNotes = JSON.parse(savedNotes);
       // Yeni notları mevcut notların başına ekle
-      notes = [...loadedNotes.filter(note => note.id > 20), ...notes];
+      const existingNotes = [...notes]; // Örnek notların kopyasını al
+      notes = [...loadedNotes.filter(note => note.id > 20), ...existingNotes];
     }
 
     if (savedVotedNotes) {
@@ -106,6 +107,8 @@ const getProvider = () => {
         return provider;
       }
     }
+    // Phantom yüklü değilse uyarı göster
+    alert('Lütfen Phantom cüzdan eklentisini yükleyin!');
     window.open('https://phantom.app/', '_blank');
     return null;
   } catch (error) {
@@ -136,14 +139,23 @@ async function connectWallet() {
   try {
     const provider = getProvider();
     
-    if (provider) {
-      const response = await provider.connect();
-      walletAddress = response.publicKey.toString();
-      updateWalletDisplay();
-      updateShareFormVisibility();
-      saveToLocalStorage();
-      displayNotes();
+    if (!provider) {
+      return; // Provider yoksa fonksiyondan çık
     }
+
+    // Eğer zaten bağlıysa
+    if (walletAddress) {
+      console.log('Cüzdan zaten bağlı');
+      return;
+    }
+
+    const response = await provider.connect();
+    walletAddress = response.publicKey.toString();
+    updateWalletDisplay();
+    updateShareFormVisibility();
+    saveToLocalStorage();
+    displayNotes();
+    
   } catch (err) {
     console.error("Cüzdan bağlantısında hata:", err);
     alert('Cüzdan bağlantısı başarısız. Lütfen tekrar deneyin.');
@@ -151,8 +163,13 @@ async function connectWallet() {
 }
 
 // Cüzdan bağlantısını kes
-function disconnectWallet() {
+async function disconnectWallet() {
   try {
+    const provider = getProvider();
+    if (provider) {
+      await provider.disconnect();
+    }
+    
     walletAddress = null;
     updateWalletDisplay();
     updateShareFormVisibility();
@@ -202,11 +219,13 @@ function showSection(sectionId) {
 // Notları sıralama
 function sortNotes(sortType) {
   try {
+    const sortedNotes = [...notes]; // Notların kopyasını al
     if (sortType === 'liked') {
-      notes.sort((a, b) => b.likes - a.likes);
+      sortedNotes.sort((a, b) => b.likes - a.likes);
     } else if (sortType === 'latest') {
-      notes.sort((a, b) => b.id - a.id);
+      sortedNotes.sort((a, b) => b.id - a.id);
     }
+    notes = sortedNotes;
     currentPage = 1;
     displayNotes();
   } catch (error) {
@@ -230,11 +249,20 @@ async function transferSOL(fromWallet, amount) {
     const provider = getProvider();
     if (!provider || !connection) return false;
 
+    // Bakiye kontrolü
+    const balance = await connection.getBalance(new solanaWeb3.PublicKey(fromWallet));
+    const requiredBalance = amount * solanaWeb3.LAMPORTS_PER_SOL;
+    
+    if (balance < requiredBalance) {
+      alert('Yetersiz bakiye! Lütfen cüzdanınıza SOL yükleyin.');
+      return false;
+    }
+
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
         fromPubkey: new solanaWeb3.PublicKey(fromWallet),
         toPubkey: new solanaWeb3.PublicKey(RECEIVER_ADDRESS),
-        lamports: amount * solanaWeb3.LAMPORTS_PER_SOL
+        lamports: requiredBalance
       })
     );
 
@@ -242,11 +270,20 @@ async function transferSOL(fromWallet, amount) {
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = new solanaWeb3.PublicKey(fromWallet);
 
-    const signed = await provider.signTransaction(transaction);
-    const signature = await connection.sendRawTransaction(signed.serialize());
-    await connection.confirmTransaction(signature);
-
-    return true;
+    try {
+      const signed = await provider.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      const confirmation = await connection.confirmTransaction(signature);
+      
+      if (confirmation.value.err) {
+        throw new Error('Transaction failed');
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Transfer işlemi başarısız:", err);
+      return false;
+    }
   } catch (error) {
     console.error("SOL transfer sırasında hata:", error);
     return false;
@@ -261,6 +298,11 @@ function displayNotes() {
     const startIndex = 0;
     const endIndex = currentPage * notesPerPage;
     const visibleNotes = notes.slice(startIndex, endIndex);
+
+    if (visibleNotes.length === 0) {
+      notesList.innerHTML = '<p class="no-notes">Henüz hiç not paylaşılmamış.</p>';
+      return;
+    }
 
     visibleNotes.forEach((note) => {
       const noteDiv = document.createElement('div');
@@ -317,32 +359,22 @@ function vote(noteId, voteType) {
   }
 }
 
-// Event Listeners
-document.addEventListener('DOMContentLoaded', () => {
+// Event Listener'ları ayarla
+function setupEventListeners() {
   try {
-    // Ana sayfayı göster
-    showSection('home');
-    
-    // LocalStorage'dan verileri yükle
-    loadFromLocalStorage();
-    
-    // Cüzdan durumunu güncelle
-    updateWalletDisplay();
-    updateShareFormVisibility();
-    
-    // Notları göster
-    displayNotes();
-
-    // Event listener'ları ekle
+    // Cüzdan bağlantı butonları
     connectWalletButton.addEventListener('click', connectWallet);
     disconnectWalletButton.addEventListener('click', disconnectWallet);
-    walletAddressDiv.addEventListener('click', () => {
+
+    // Cüzdan dropdown menüsü
+    walletAddressDiv.addEventListener('click', (event) => {
+      event.stopPropagation();
       walletDropdown.classList.toggle('active');
     });
 
     // Sayfa herhangi bir yerine tıklandığında dropdown'ı kapat
     document.addEventListener('click', (event) => {
-      if (!walletDropdown.contains(event.target)) {
+      if (!walletDropdown.contains(event.target) && !walletAddressDiv.contains(event.target)) {
         walletDropdown.classList.remove('active');
       }
     });
@@ -357,6 +389,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const content = noteInput.value.trim();
       if (content.length === 0) {
         alert('Not boş olamaz!');
+        return;
+      }
+
+      if (content.length > 280) {
+        alert('Not 280 karakterden uzun olamaz!');
         return;
       }
 
@@ -384,7 +421,29 @@ document.addEventListener('DOMContentLoaded', () => {
       showSection('home');
       alert('Not başarıyla paylaşıldı!');
     });
+  } catch (error) {
+    console.error("Event listener'lar ayarlanırken hata:", error);
+  }
+}
 
+// Sayfa yüklendiğinde çalışacak kodlar
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    // Ana sayfayı göster
+    showSection('home');
+    
+    // LocalStorage'dan verileri yükle
+    loadFromLocalStorage();
+    
+    // Cüzdan durumunu güncelle
+    updateWalletDisplay();
+    updateShareFormVisibility();
+    
+    // Event listener'ları ayarla
+    setupEventListeners();
+    
+    // Notları göster
+    displayNotes();
   } catch (error) {
     console.error("Sayfa yüklenirken hata:", error);
   }
