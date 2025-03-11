@@ -1,13 +1,10 @@
-// Buffer ve Web3.js kontrolü
+ // Buffer ve Web3.js kontrolü
     if (typeof window !== 'undefined' && !window.Buffer) {
       console.error('Buffer tanımlı değil!');
     }
-
     if (typeof solanaWeb3 === 'undefined') {
       console.error('Solana Web3 yüklenemedi!');
     }
-
-    // Test için konsol logları
     console.log('Script başlatılıyor...');
     console.log('Buffer kontrolü:', typeof window.Buffer);
     console.log('Web3 kontrolü:', typeof solanaWeb3);
@@ -24,7 +21,6 @@
     const walletDropdown = document.querySelector('.wallet-dropdown');
     const disconnectWalletButton = document.getElementById('disconnectWallet');
 
-    // Test için element kontrolü
     console.log('HTML elementleri yüklendi:', {
       connectWalletButton: !!connectWalletButton,
       walletAddressDiv: !!walletAddressDiv,
@@ -33,7 +29,7 @@
       notesList: !!notesList
     });
 
-    // Notları saklamak için dizi ve cüzdan durumu
+    // Demo notlar ve cüzdan bilgileri
     let notes = [
       { id: 1, content: "This is a small note.", likes: 5, dislikes: 2, size: "small" },
       { id: 2, content: "This is a longer note with more content.", likes: 10, dislikes: 0, size: "tall" },
@@ -56,27 +52,23 @@
       { id: 19, content: "Sustainable blockchain solutions stand out.", likes: 12, dislikes: 2, size: "medium" },
       { id: 20, content: "Web3 gaming sector is growing.", likes: 15, dislikes: 4, size: "small" }
     ];
-
     let walletAddress = null;
     let currentPage = 1;
     const notesPerPage = 20;
     let votedNotes = new Set();
 
-    // Solana bağlantı ve transfer ayarları
+    // Solana bağlantı ayarları
     const SOLANA_NETWORK = 'mainnet-beta';
     const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
     const NOTE_COST = 0.01;
 
-    // Alternatif RPC endpoints
-    // Eğer API anahtarı gerektiren bir endpoint kullanıyorsanız, URL'de YOUR_API_KEY kısmını düzenleyin.
+    // RPC endpoint listesini, tarayıcı dostu olanı ilk sıraya alarak güncelledik.
     const RPC_ENDPOINTS = [
-      'https://api.mainnet-beta.solana.com',
       'https://rpc.ankr.com/solana',
-      'https://solana-api.projectserum.com',
-      // 'https://solana-mainnet.g.alchemy.com/v2/YOUR_API_KEY'
+      'https://api.mainnet-beta.solana.com',
+      'https://solana-api.projectserum.com'
     ];
 
-    // Solana bağlantısını oluştur
     let connection;
     let currentEndpointIndex = 0;
 
@@ -100,22 +92,16 @@
         console.log('Bağlantı nesnesi oluşturuldu');
 
         // Bağlantı testi
-        try {
-          console.log('Bağlantı test ediliyor...');
-          const version = await connection.getVersion();
-          console.log('Solana versiyon:', version);
-          return true;
-        } catch (testError) {
-          console.error('Bağlantı testi başarısız:', testError);
-          throw testError;
-        }
+        console.log('Bağlantı test ediliyor...');
+        const version = await connection.getVersion();
+        console.log('Solana versiyon:', version);
+        return true;
       } catch (error) {
         console.error("RPC bağlantısı başarısız:", error);
 
-        // Eğer 403 veya 429 hatası alınıyorsa, alternatif endpoint denemesi yap
-        if (error.message.includes('403') || error.message.includes('429') ||
-            (error.response && error.response.error && error.response.error.message.includes('Access forbidden'))) {
-          console.log('Erişim hatası, alternatif endpoint deneniyor...');
+        // Hata mesajı veya response kontrolü ile 403/429 durumunu algılayıp alternatif endpoint deneyelim.
+        if (error.message.includes('403') || error.message.includes('429')) {
+          console.log('403/429 hatası, alternatif endpoint deneniyor...');
           currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
           if (currentEndpointIndex !== 0) {
             await new Promise(resolve => setTimeout(resolve, 2000)); // 2 saniye bekle
@@ -123,12 +109,12 @@
           }
         }
 
-        alert('Solana ağına bağlanılamıyor. Lütfen daha sonra tekrar deneyin.');
+        // Eğer tüm endpoint’ler başarısız olursa, CORS kısıtlaması veya API anahtar gereksinimine dikkat edin.
+        alert('Solana ağına bağlanılamıyor. Tarayıcı kısıtlamaları veya API anahtarı gereksinimi olabilir. Gerekirse bir backend proxy kullanın.');
         return false;
       }
     }
 
-    // İlk bağlantıyı oluştur ve 3 kez deneme yap
     async function initializeConnection() {
       let retryCount = 0;
       const maxRetries = 3;
@@ -161,7 +147,6 @@
         const savedWalletAddress = localStorage.getItem('walletAddress');
         if (savedNotes) {
           const loadedNotes = JSON.parse(savedNotes);
-          // Yeni notları mevcut notların başına ekle (örneğin demo notlardan farklı ID'ler için)
           const existingNotes = [...notes];
           notes = [...loadedNotes.filter(note => note.id > 20), ...existingNotes];
         }
@@ -209,7 +194,6 @@
       }
     };
 
-    // Cüzdan görünümünü güncelle
     function updateWalletDisplay() {
       try {
         if (walletAddress) {
@@ -226,7 +210,6 @@
       }
     }
 
-    // Cüzdan bağlantısı
     async function connectWallet() {
       try {
         const provider = getProvider();
@@ -247,7 +230,6 @@
       }
     }
 
-    // Cüzdan bağlantısını kes
     async function disconnectWallet() {
       try {
         const provider = getProvider();
@@ -263,7 +245,6 @@
       }
     }
 
-    // Share form görünürlüğü
     function updateShareFormVisibility() {
       try {
         if (walletAddress) {
@@ -278,7 +259,6 @@
       }
     }
 
-    // Bölüm gösterme fonksiyonu
     function showSection(sectionId) {
       try {
         document.querySelectorAll('.section').forEach(section => {
@@ -296,7 +276,6 @@
       }
     }
 
-    // Notları sıralama
     function sortNotes(sortType) {
       try {
         const sortedNotes = [...notes];
@@ -313,7 +292,6 @@
       }
     }
 
-    // Daha fazla not yükleme
     function loadMore() {
       try {
         currentPage++;
@@ -323,7 +301,6 @@
       }
     }
 
-    // Transfer işlemi için güvenlik kontrolleri
     async function checkTransactionSafety(fromWallet, amount) {
       try {
         if (!connection) {
@@ -353,7 +330,6 @@
       }
     }
 
-    // SOL transfer işlemi
     async function transferSOL(fromWallet, amount) {
       try {
         console.log('Transfer başlatılıyor...', { fromWallet, amount });
@@ -418,7 +394,6 @@
       }
     }
 
-    // Notları gösterme
     function displayNotes() {
       try {
         notesList.innerHTML = '';
@@ -453,7 +428,6 @@
       }
     }
 
-    // Oy verme
     function vote(noteId, voteType) {
       try {
         if (!walletAddress) {
@@ -477,7 +451,6 @@
       }
     }
 
-    // Event Listener'ları
     document.addEventListener('DOMContentLoaded', () => {
       try {
         console.log('Sayfa yüklendi, başlangıç işlemleri yapılıyor...');
@@ -492,23 +465,19 @@
       }
     });
 
-    // Cüzdan dropdown menüsünü aç/kapa
     walletAddressDiv.addEventListener('click', () => {
       walletDropdown.classList.toggle('active');
     });
 
-    // Sayfanın herhangi bir yerine tıklandığında dropdown'ı kapat
     document.addEventListener('click', (event) => {
       if (!walletDropdown.contains(event.target) && !walletAddressDiv.contains(event.target)) {
         walletDropdown.classList.remove('active');
       }
     });
 
-    // Cüzdan bağlantı butonları
     connectWalletButton.addEventListener('click', connectWallet);
     disconnectWalletButton.addEventListener('click', disconnectWallet);
 
-    // Not paylaşma işlemi
     shareNoteButton.addEventListener('click', async () => {
       if (!walletAddress) {
         alert('Not paylaşmak için cüzdanınızı bağlamalısınız!');
@@ -543,4 +512,3 @@
       showSection('home');
       alert('Not başarıyla paylaşıldı!');
     });
-  
