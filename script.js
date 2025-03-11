@@ -69,9 +69,10 @@ const NOTE_COST = 0.01;
 
 // Alternatif RPC endpoints - CORS destekli endpoint'ler
 const RPC_ENDPOINTS = [
+    'https://api.mainnet-beta.solana.com',
+    'https://solana-mainnet.g.alchemy.com/v2/demo',
     'https://rpc.ankr.com/solana',
-    'https://solana.getblock.io/mainnet-beta',
-    'https://solana.api.chainstack.com/mainnet-beta'
+    'https://solana.getblock.io/mainnet-beta'
 ];
 
 // Solana bağlantısını oluştur
@@ -88,38 +89,24 @@ async function createConnection() {
             commitment: 'confirmed',
             confirmTransactionInitialTimeout: 60000,
             disableRetryOnRateLimit: false,
-            fetch: fetch.bind(window),
+            fetch: window.fetch.bind(window),
             httpHeaders: {
                 'Content-Type': 'application/json',
-                'Origin': window.location.origin
+                'Origin': window.location.origin,
+                'Accept': '*/*'
             }
         };
 
-        if (!window.solanaWeb3) {
-            throw new Error('Solana Web3 yüklenemedi. Sayfayı yenileyin veya tarayıcıyı yeniden başlatın.');
-        }
-
         connection = new solanaWeb3.Connection(endpoint, connectionConfig);
-        console.log('Bağlantı nesnesi oluşturuldu');
         
         // Test bağlantıyı
         try {
             console.log('Bağlantı test ediliyor...');
-            const slot = await connection.getSlot();
-            console.log('Bağlantı başarılı, slot:', slot);
+            await connection.getVersion();
+            console.log('Bağlantı başarılı');
             return true;
         } catch (testError) {
             console.error('Bağlantı testi başarısız:', testError);
-            
-            if (testError.message.includes('403') || testError.message.includes('429')) {
-                console.log('Erişim hatası, alternatif endpoint deneniyor...');
-                currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-                
-                if (currentEndpointIndex !== 0) {
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    return createConnection();
-                }
-            }
             throw testError;
         }
     } catch (error) {
@@ -132,8 +119,7 @@ async function createConnection() {
             return createConnection();
         }
         
-        alert('Solana ağına bağlanılamıyor. Lütfen VPN kullanmayı deneyin veya daha sonra tekrar deneyin.');
-        return false;
+        throw new Error('Hiçbir RPC endpoint\'i yanıt vermiyor. Lütfen daha sonra tekrar deneyin.');
     }
 }
 
@@ -357,10 +343,7 @@ async function checkTransactionSafety(fromWallet, amount) {
         
         if (!connection) {
             console.log('Bağlantı yok, yeni bağlantı oluşturuluyor...');
-            const connected = await createConnection();
-            if (!connected) {
-                throw new Error('Ağ bağlantısı kurulamadı');
-            }
+            await createConnection();
         }
 
         const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
@@ -373,42 +356,30 @@ async function checkTransactionSafety(fromWallet, amount) {
                 console.log(`Bakiye sorgusu deneme ${retryCount + 1}/${maxRetries}`);
                 const pubKey = new solanaWeb3.PublicKey(fromWallet);
                 
-                // Bakiyeyi kontrol et
+                // Her denemede farklı bir endpoint kullan
+                if (retryCount > 0) {
+                    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+                    await createConnection();
+                }
+                
                 balance = await connection.getBalance(pubKey, 'confirmed');
                 console.log('Mevcut bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
                 break;
             } catch (balanceError) {
                 console.error(`Bakiye sorgulama hatası (${retryCount + 1}):`, balanceError);
                 
-                if (balanceError.message.includes('403') || balanceError.message.includes('429')) {
-                    console.log('RPC hatası, alternatif endpoint deneniyor...');
-                    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-                    await createConnection();
-                } else {
-                    throw balanceError;
+                if (retryCount === maxRetries - 1) {
+                    throw new Error('Bakiye sorgulanamadı. Lütfen tekrar deneyin.');
                 }
             }
             retryCount++;
-            if (retryCount < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-        }
-
-        if (retryCount === maxRetries) {
-            throw new Error('Maksimum deneme sayısına ulaşıldı');
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
         if (balance < minBalance) {
-            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli.`);
         }
 
-        // Ekstra güvenlik kontrolü - Mainnet için
-        const confirmation = await connection.getRecentPerformanceSamples(1);
-        if (confirmation[0]?.numSlots === 0) {
-            throw new Error('Ağ performansı düşük, lütfen daha sonra tekrar deneyin');
-        }
-
-        console.log('Güvenlik kontrolü başarılı');
         return true;
 
     } catch (error) {
