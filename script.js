@@ -1,3 +1,12 @@
+// Buffer ve Web3.js kontrolü
+if (typeof window !== 'undefined' && !window.Buffer) {
+    console.error('Buffer tanımlı değil!');
+}
+
+if (typeof solanaWeb3 === 'undefined') {
+    console.error('Solana Web3 yüklenemedi!');
+}
+
 // Test için konsol logları
 console.log('Script başlatılıyor...');
 console.log('Buffer kontrolü:', typeof window.Buffer);
@@ -60,10 +69,10 @@ const NOTE_COST = 0.01;
 
 // Alternatif RPC endpoints
 const RPC_ENDPOINTS = [
-    'https://solana-mainnet.g.alchemy.com/v2/demo',
-    'https://rpc.helius.xyz/?api-key=1d0f0ddb-1111-2222-3333-444444444444',
-    'https://api.devnet.solana.com',
-    'https://api.testnet.solana.com'
+    'https://api.mainnet-beta.solana.com',
+    'https://solana-api.projectserum.com',
+    'https://rpc.ankr.com/solana',
+    'https://solana-mainnet.g.alchemy.com/v2/demo'
 ];
 
 // Solana bağlantısını oluştur
@@ -82,6 +91,10 @@ async function createConnection() {
             disableRetryOnRateLimit: false
         };
 
+        if (!window.solanaWeb3) {
+            throw new Error('Solana Web3 yüklenemedi. Sayfayı yenileyin veya tarayıcıyı yeniden başlatın.');
+        }
+
         connection = new solanaWeb3.Connection(endpoint, connectionConfig);
         console.log('Bağlantı nesnesi oluşturuldu');
         
@@ -98,13 +111,12 @@ async function createConnection() {
     } catch (error) {
         console.error("RPC bağlantısı başarısız:", error);
         
-        // Rate limit veya 403 hatası durumunda diğer endpoint'i dene
         if (error.message.includes('403') || error.message.includes('429')) {
             console.log('Erişim hatası, alternatif endpoint deneniyor...');
             currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
             
             if (currentEndpointIndex !== 0) {
-                await new Promise(resolve => setTimeout(resolve, 1000)); // 1 saniye bekle
+                await new Promise(resolve => setTimeout(resolve, 2000)); // 2 saniye bekle
                 return createConnection();
             }
         }
