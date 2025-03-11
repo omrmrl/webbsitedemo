@@ -427,10 +427,12 @@ async function transferSOL(fromWallet, amount) {
             throw new Error('Phantom cüzdan bağlantısı bulunamadı');
         }
 
-        // Cüzdan ağını kontrol et
-        const network = await provider.connection.getCluster();
-        if (network !== 'mainnet-beta') {
-            throw new Error('Lütfen Phantom cüzdanınızı Mainnet-Beta ağına geçirin');
+        // Basit bağlantı kontrolü
+        try {
+            await provider.request({ method: "connect" });
+        } catch (connError) {
+            console.error('Cüzdan bağlantı hatası:', connError);
+            throw new Error('Cüzdan bağlantısı kurulamadı. Lütfen Phantom cüzdanınızın bağlı olduğundan emin olun.');
         }
 
         if (!connection) {
