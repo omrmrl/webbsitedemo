@@ -60,10 +60,10 @@ const NOTE_COST = 0.01;
 
 // Alternatif RPC endpoints
 const RPC_ENDPOINTS = [
-  'https://api.mainnet-beta.solana.com',
-  'https://solana-mainnet.g.alchemy.com/v2/demo',
-  'https://rpc.ankr.com/solana',
-  'https://mainnet.rpcpool.com'
+    'https://solana-mainnet.g.alchemy.com/v2/demo',
+    'https://rpc.helius.xyz/?api-key=1d0f0ddb-1111-2222-3333-444444444444',
+    'https://api.devnet.solana.com',
+    'https://api.testnet.solana.com'
 ];
 
 // Solana bağlantısını oluştur
@@ -78,7 +78,7 @@ async function createConnection() {
 
         const connectionConfig = {
             commitment: 'confirmed',
-            confirmTransactionInitialTimeout: 60000,
+            confirmTransactionInitialTimeout: 120000,
             disableRetryOnRateLimit: false
         };
 
@@ -86,21 +86,27 @@ async function createConnection() {
         console.log('Bağlantı nesnesi oluşturuldu');
         
         // Test bağlantıyı
-        await connection.getSlot().catch(error => {
-            console.error('Slot sorgusu başarısız:', error);
-            throw new Error('Bağlantı testi başarısız: ' + error.message);
-        });
-
-        console.log('Bağlantı başarılı:', endpoint);
-        return true;
+        try {
+            console.log('Bağlantı test ediliyor...');
+            const version = await connection.getVersion();
+            console.log('Solana versiyon:', version);
+            return true;
+        } catch (testError) {
+            console.error('Bağlantı testi başarısız:', testError);
+            throw testError;
+        }
     } catch (error) {
         console.error("RPC bağlantısı başarısız:", error);
-        console.log('Alternatif endpoint deneniyor...');
         
-        // Diğer endpoint'i dene
-        currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-        if (currentEndpointIndex !== 0) {
-            return createConnection();
+        // Rate limit veya 403 hatası durumunda diğer endpoint'i dene
+        if (error.message.includes('403') || error.message.includes('429')) {
+            console.log('Erişim hatası, alternatif endpoint deneniyor...');
+            currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+            
+            if (currentEndpointIndex !== 0) {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // 1 saniye bekle
+                return createConnection();
+            }
         }
         
         alert('Solana ağına bağlanılamıyor. Lütfen daha sonra tekrar deneyin.');
@@ -108,8 +114,32 @@ async function createConnection() {
     }
 }
 
-// İlk bağlantıyı oluştur
-createConnection().catch(console.error);
+// İlk bağlantıyı oluştur ve 3 kez deneme yap
+async function initializeConnection() {
+    let retryCount = 0;
+    const maxRetries = 3;
+
+    while (retryCount < maxRetries) {
+        try {
+            console.log(`Bağlantı denemesi ${retryCount + 1}/${maxRetries}`);
+            const connected = await createConnection();
+            if (connected) {
+                console.log('Bağlantı başarıyla kuruldu');
+                return true;
+            }
+        } catch (error) {
+            console.error(`Bağlantı denemesi ${retryCount + 1} başarısız:`, error);
+        }
+        retryCount++;
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 saniye bekle
+    }
+    
+    console.error(`${maxRetries} deneme sonrası bağlantı kurulamadı`);
+    return false;
+}
+
+// Bağlantıyı başlat
+initializeConnection().catch(console.error);
 
 // LocalStorage'dan verileri yükle
 function loadFromLocalStorage() {
