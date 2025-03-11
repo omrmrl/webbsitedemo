@@ -1,3 +1,8 @@
+// Test için konsol logları
+console.log('Script başlatılıyor...');
+console.log('Buffer kontrolü:', typeof window.Buffer);
+console.log('Web3 kontrolü:', typeof solanaWeb3);
+
 // HTML elemanlarını seç
 const connectWalletButton = document.getElementById('connectWallet');
 const walletAddressDiv = document.getElementById('walletAddress');
@@ -9,6 +14,15 @@ const shareForm = document.getElementById('shareForm');
 const walletWarning = document.getElementById('walletWarning');
 const walletDropdown = document.querySelector('.wallet-dropdown');
 const disconnectWalletButton = document.getElementById('disconnectWallet');
+
+// Test için element kontrolü
+console.log('HTML elementleri yüklendi:', {
+    connectWalletButton: !!connectWalletButton,
+    walletAddressDiv: !!walletAddressDiv,
+    noteInput: !!noteInput,
+    shareNoteButton: !!shareNoteButton,
+    notesList: !!notesList
+});
 
 // Notları saklamak için dizi ve cüzdan durumu
 let notes = [
@@ -57,43 +71,45 @@ let connection;
 let currentEndpointIndex = 0;
 
 async function createConnection() {
-  try {
-    const endpoint = RPC_ENDPOINTS[currentEndpointIndex];
-    const connectionConfig = {
-      commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 60000,
-      disableRetryOnRateLimit: false,
-      httpHeaders: {
-        'Origin': window.location.origin,
-        'Content-Type': 'application/json'
-      }
-    };
+    try {
+        console.log('RPC bağlantısı oluşturuluyor...');
+        const endpoint = RPC_ENDPOINTS[currentEndpointIndex];
+        console.log('Seçilen endpoint:', endpoint);
 
-    connection = new solanaWeb3.Connection(endpoint, connectionConfig);
-    
-    // Test bağlantıyı
-    await connection.getSlot().catch(error => {
-      throw new Error('Bağlantı testi başarısız: ' + error.message);
-    });
+        const connectionConfig = {
+            commitment: 'confirmed',
+            confirmTransactionInitialTimeout: 60000,
+            disableRetryOnRateLimit: false
+        };
 
-    console.log('Bağlantı başarılı:', endpoint);
-    return true;
-  } catch (error) {
-    console.error("RPC bağlantısı başarısız:", error);
-    
-    // Diğer endpoint'i dene
-    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-    if (currentEndpointIndex !== 0) {
-      return createConnection();
+        connection = new solanaWeb3.Connection(endpoint, connectionConfig);
+        console.log('Bağlantı nesnesi oluşturuldu');
+        
+        // Test bağlantıyı
+        await connection.getSlot().catch(error => {
+            console.error('Slot sorgusu başarısız:', error);
+            throw new Error('Bağlantı testi başarısız: ' + error.message);
+        });
+
+        console.log('Bağlantı başarılı:', endpoint);
+        return true;
+    } catch (error) {
+        console.error("RPC bağlantısı başarısız:", error);
+        console.log('Alternatif endpoint deneniyor...');
+        
+        // Diğer endpoint'i dene
+        currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+        if (currentEndpointIndex !== 0) {
+            return createConnection();
+        }
+        
+        alert('Solana ağına bağlanılamıyor. Lütfen daha sonra tekrar deneyin.');
+        return false;
     }
-    
-    alert('Solana ağına bağlanılamıyor. Lütfen daha sonra tekrar deneyin.');
-    return false;
-  }
 }
 
 // İlk bağlantıyı oluştur
-createConnection();
+createConnection().catch(console.error);
 
 // LocalStorage'dan verileri yükle
 function loadFromLocalStorage() {
@@ -319,65 +335,85 @@ async function checkTransactionSafety(fromWallet, amount) {
 
 // SOL transfer işlemi
 async function transferSOL(fromWallet, amount) {
-  try {
-    const provider = getProvider();
-    if (!provider || !connection) {
-      alert('Cüzdan bağlantısı veya ağ bağlantısı bulunamadı!');
-      return false;
-    }
-
-    const isSafe = await checkTransactionSafety(fromWallet, amount);
-    if (!isSafe) return false;
-
-    const fromPubkey = new solanaWeb3.PublicKey(fromWallet);
-    const toPubkey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
-    const lamports = Math.floor(amount * solanaWeb3.LAMPORTS_PER_SOL);
-
-    const transaction = new solanaWeb3.Transaction().add(
-      solanaWeb3.SystemProgram.transfer({
-        fromPubkey,
-        toPubkey,
-        lamports
-      })
-    );
-
     try {
-      const { blockhash } = await connection.getLatestBlockhash('finalized');
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = fromPubkey;
+        console.log('Transfer başlatılıyor...', { fromWallet, amount });
+        
+        const provider = getProvider();
+        if (!provider || !connection) {
+            console.error('Provider veya connection bulunamadı');
+            alert('Cüzdan bağlantısı veya ağ bağlantısı bulunamadı!');
+            return false;
+        }
 
-      const signed = await provider.signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize(), {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed'
-      });
-      
-      const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-      
-      if (confirmation.value.err) {
-        throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
-      }
+        const isSafe = await checkTransactionSafety(fromWallet, amount);
+        if (!isSafe) {
+            console.log('Güvenlik kontrolü başarısız');
+            return false;
+        }
 
-      console.log('İşlem başarılı:', signature);
-      return true;
+        console.log('İşlem hazırlanıyor...');
+        const fromPubkey = new solanaWeb3.PublicKey(fromWallet);
+        const toPubkey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
+        const lamports = Math.floor(amount * solanaWeb3.LAMPORTS_PER_SOL);
 
-    } catch (err) {
-      if (err.message.includes('403')) {
-        // RPC endpoint'i değiştir ve tekrar dene
-        currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-        await createConnection();
-        return transferSOL(fromWallet, amount);
-      }
+        const transaction = new solanaWeb3.Transaction().add(
+            solanaWeb3.SystemProgram.transfer({
+                fromPubkey,
+                toPubkey,
+                lamports
+            })
+        );
 
-      console.error("Transfer işlemi başarısız:", err);
-      alert('İşlem başarısız: ' + err.message);
-      return false;
+        try {
+            console.log('Blockhash alınıyor...');
+            const { blockhash } = await connection.getLatestBlockhash('finalized');
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = fromPubkey;
+
+            console.log('İşlem imzalanıyor...');
+            const signed = await provider.signTransaction(transaction);
+            
+            // Buffer hatası için değişiklik
+            console.log('İşlem serileştiriliyor...');
+            const serializedTransaction = signed.serialize({
+                requireAllSignatures: false,
+                verifySignatures: false
+            });
+            
+            console.log('İşlem gönderiliyor...');
+            const signature = await connection.sendRawTransaction(serializedTransaction, {
+                skipPreflight: false,
+                preflightCommitment: 'confirmed'
+            });
+            
+            console.log('İşlem onayı bekleniyor...');
+            const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+            
+            if (confirmation.value.err) {
+                console.error('İşlem onay hatası:', confirmation.value.err);
+                throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
+            }
+
+            console.log('İşlem başarılı:', signature);
+            return true;
+
+        } catch (err) {
+            console.error('İşlem sırasında hata:', err);
+            if (err.message.includes('403')) {
+                console.log('403 hatası, alternatif endpoint deneniyor...');
+                currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+                await createConnection();
+                return transferSOL(fromWallet, amount);
+            }
+
+            alert('İşlem başarısız: ' + err.message);
+            return false;
+        }
+    } catch (error) {
+        console.error("SOL transfer sırasında hata:", error);
+        alert('Transfer hatası: ' + error.message);
+        return false;
     }
-  } catch (error) {
-    console.error("SOL transfer sırasında hata:", error);
-    alert('Transfer hatası: ' + error.message);
-    return false;
-  }
 }
 
 // Notları gösterme
@@ -450,15 +486,17 @@ function vote(noteId, voteType) {
 
 // Event Listener'ları
 document.addEventListener('DOMContentLoaded', () => {
-  try {
-    showSection('home');
-    loadFromLocalStorage();
-    updateWalletDisplay();
-    updateShareFormVisibility();
-    displayNotes();
-  } catch (error) {
-    console.error("Sayfa yüklenirken hata:", error);
-  }
+    try {
+        console.log('Sayfa yüklendi, başlangıç işlemleri yapılıyor...');
+        showSection('home');
+        loadFromLocalStorage();
+        updateWalletDisplay();
+        updateShareFormVisibility();
+        displayNotes();
+        console.log('Başlangıç işlemleri tamamlandı');
+    } catch (error) {
+        console.error("Sayfa yüklenirken hata:", error);
+    }
 });
 
 // Cüzdan dropdown menüsünü aç/kapa
@@ -517,4 +555,4 @@ shareNoteButton.addEventListener('click', async () => {
   displayNotes();
   showSection('home');
   alert('Not başarıyla paylaşıldı!');
-});
+}); 
