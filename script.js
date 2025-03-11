@@ -67,11 +67,12 @@ const SOLANA_NETWORK = 'mainnet-beta';
 const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
 const NOTE_COST = 0.01;
 
-// Alternatif RPC endpoints - Mainnet endpoint'leri
+// Alternatif RPC endpoints - CORS destekli endpoint'ler
 const RPC_ENDPOINTS = [
     'https://api.mainnet-beta.solana.com',
-    'https://solana-mainnet.g.alchemy.com/v2/demo',
-    'https://rpc.ankr.com/solana'
+    'https://solana-api.projectserum.com',
+    'https://free.rpcpool.com',
+    'https://solana.public-rpc.com'
 ];
 
 // Solana bağlantısını oluştur
@@ -85,16 +86,15 @@ async function createConnection() {
         console.log('Seçilen endpoint:', endpoint);
 
         const connectionConfig = {
-            commitment: 'processed',
+            commitment: 'confirmed',
             confirmTransactionInitialTimeout: 60000,
             disableRetryOnRateLimit: false,
             fetch: window.fetch.bind(window),
             httpHeaders: {
                 'Content-Type': 'application/json',
-                'Origin': '*',
-                'Access-Control-Allow-Origin': '*'
-            },
-            wsEndpoint: null // WebSocket devre dışı bırakıldı
+                'Origin': window.location.origin,
+                'Accept': '*/*'
+            }
         };
 
         connection = new solanaWeb3.Connection(endpoint, connectionConfig);
@@ -102,18 +102,11 @@ async function createConnection() {
         // Test bağlantıyı
         try {
             console.log('Bağlantı test ediliyor...');
-            const version = await connection.getVersion();
-            console.log('Bağlantı başarılı, versiyon:', version);
+            await connection.getVersion();
+            console.log('Bağlantı başarılı');
             return true;
         } catch (testError) {
             console.error('Bağlantı testi başarısız:', testError);
-            
-            // Rate limit veya CORS hatası durumunda
-            if (testError.message.includes('403') || 
-                testError.message.includes('429') || 
-                testError.message.includes('CORS')) {
-                throw new Error('Erişim engellendi, alternatif endpoint deneniyor...');
-            }
             throw testError;
         }
     } catch (error) {
@@ -122,7 +115,7 @@ async function createConnection() {
         if (currentEndpointIndex < RPC_ENDPOINTS.length - 1) {
             console.log('Alternatif endpoint deneniyor...');
             currentEndpointIndex++;
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 2000));
             return createConnection();
         }
         
@@ -356,13 +349,7 @@ async function checkTransactionSafety(fromWallet, amount) {
             await createConnection();
         }
 
-        // İşlem maliyetini hesapla (0.000005 SOL = 5000 lamports)
-        const transactionFee = 0.000005;
-        const totalAmount = amount + transactionFee;
-        const minBalance = totalAmount * solanaWeb3.LAMPORTS_PER_SOL;
-        
-        console.log('Gerekli minimum bakiye:', totalAmount, 'SOL');
-        
+        const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
         let balance = 0;
         let retryCount = 0;
         const maxRetries = 3;
@@ -372,36 +359,25 @@ async function checkTransactionSafety(fromWallet, amount) {
                 console.log(`Bakiye sorgusu deneme ${retryCount + 1}/${maxRetries}`);
                 const pubKey = new solanaWeb3.PublicKey(fromWallet);
                 
-                // Her denemede farklı bir endpoint kullan
-                if (retryCount > 0) {
-                    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-                    await createConnection();
-                }
-                
                 balance = await connection.getBalance(pubKey, 'confirmed');
-                const balanceInSol = balance / solanaWeb3.LAMPORTS_PER_SOL;
-                console.log('Mevcut bakiye:', balanceInSol, 'SOL');
-
-                if (balance >= minBalance) {
-                    console.log('Bakiye yeterli, işlem devam edebilir');
-                    return true;
-                }
-
-                const requiredMore = (minBalance - balance) / solanaWeb3.LAMPORTS_PER_SOL;
-                throw new Error(`Yetersiz bakiye! İşlem için ${totalAmount.toFixed(6)} SOL gerekli. Mevcut bakiye: ${balanceInSol.toFixed(6)} SOL. ${requiredMore.toFixed(6)} SOL daha gerekli.`);
-
+                console.log('Mevcut bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
+                break;
             } catch (balanceError) {
                 console.error(`Bakiye sorgulama hatası (${retryCount + 1}):`, balanceError);
                 
                 if (retryCount === maxRetries - 1) {
-                    throw balanceError;
+                    throw new Error('Bakiye sorgulanamadı. Lütfen tekrar deneyin.');
                 }
             }
             retryCount++;
             await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
-        return false;
+        if (balance < minBalance) {
+            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli.`);
+        }
+
+        return true;
 
     } catch (error) {
         console.error("Güvenlik kontrolü sırasında hata:", error);
@@ -420,10 +396,12 @@ async function transferSOL(fromWallet, amount) {
             throw new Error('Phantom cüzdan bağlantısı bulunamadı');
         }
 
-        // Phantom ağ kontrolü
-        const network = await provider.request({ method: 'getNetwork' });
-        if (network !== SOLANA_NETWORK) {
-            throw new Error(`Lütfen Phantom cüzdanınızı ${SOLANA_NETWORK} ağına geçirin`);
+        // Basit bağlantı kontrolü
+        try {
+            await provider.request({ method: "connect" });
+        } catch (connError) {
+            console.error('Cüzdan bağlantı hatası:', connError);
+            throw new Error('Cüzdan bağlantısı kurulamadı. Lütfen Phantom cüzdanınızın bağlı olduğundan emin olun.');
         }
 
         if (!connection) {
