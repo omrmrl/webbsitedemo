@@ -63,15 +63,15 @@ const notesPerPage = 20;
 let votedNotes = new Set();
 
 // Solana bağlantı ve transfer ayarları
-const SOLANA_NETWORK = 'devnet';
+const SOLANA_NETWORK = 'mainnet-beta';
 const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
 const NOTE_COST = 0.01;
 
-// Alternatif RPC endpoints - Sadece Devnet endpoint'leri
+// Alternatif RPC endpoints - Mainnet için güvenilir endpoint'ler
 const RPC_ENDPOINTS = [
-    'https://api.devnet.solana.com',
-    'https://rpc.ankr.com/solana_devnet',
-    'https://solana-devnet.g.alchemy.com/v2/demo'
+    'https://api.mainnet-beta.solana.com',
+    'https://solana-api.projectserum.com',
+    'https://rpc.ankr.com/solana'
 ];
 
 // Solana bağlantısını oluştur
@@ -372,19 +372,6 @@ async function checkTransactionSafety(fromWallet, amount) {
                 console.log(`Bakiye sorgusu deneme ${retryCount + 1}/${maxRetries}`);
                 const pubKey = new solanaWeb3.PublicKey(fromWallet);
                 
-                // Airdrop isteği gönder (sadece devnet için)
-                try {
-                    console.log('Devnet SOL talep ediliyor...');
-                    const airdropSignature = await connection.requestAirdrop(
-                        pubKey,
-                        2 * solanaWeb3.LAMPORTS_PER_SOL // 2 SOL talep et
-                    );
-                    await connection.confirmTransaction(airdropSignature);
-                    console.log('Airdrop başarılı!');
-                } catch (airdropError) {
-                    console.log('Airdrop başarısız, mevcut bakiye kontrol ediliyor:', airdropError);
-                }
-
                 // Bakiyeyi kontrol et
                 balance = await connection.getBalance(pubKey, 'confirmed');
                 console.log('Mevcut bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
@@ -411,7 +398,13 @@ async function checkTransactionSafety(fromWallet, amount) {
         }
 
         if (balance < minBalance) {
-            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL. Lütfen Devnet'te test SOL almak için cüzdanınızı yeniden bağlayın.`);
+            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+        }
+
+        // Ekstra güvenlik kontrolü - Mainnet için
+        const confirmation = await connection.getRecentPerformanceSamples(1);
+        if (confirmation[0]?.numSlots === 0) {
+            throw new Error('Ağ performansı düşük, lütfen daha sonra tekrar deneyin');
         }
 
         console.log('Güvenlik kontrolü başarılı');
@@ -419,13 +412,7 @@ async function checkTransactionSafety(fromWallet, amount) {
 
     } catch (error) {
         console.error("Güvenlik kontrolü sırasında hata:", error);
-        
-        if (error.message.includes('Yetersiz bakiye')) {
-            alert(error.message);
-        } else {
-            alert('Bakiye sorgulanamadı. Lütfen cüzdanınızı Devnet ağına geçirip tekrar deneyin.');
-        }
-        
+        alert(error.message);
         return false;
     }
 }
@@ -438,6 +425,12 @@ async function transferSOL(fromWallet, amount) {
         const provider = getProvider();
         if (!provider) {
             throw new Error('Phantom cüzdan bağlantısı bulunamadı');
+        }
+
+        // Cüzdan ağını kontrol et
+        const network = await provider.connection.getCluster();
+        if (network !== 'mainnet-beta') {
+            throw new Error('Lütfen Phantom cüzdanınızı Mainnet-Beta ağına geçirin');
         }
 
         if (!connection) {
@@ -487,7 +480,7 @@ async function transferSOL(fromWallet, amount) {
                 const signature = await connection.sendRawTransaction(serializedTransaction, {
                     skipPreflight: false,
                     maxRetries: 3,
-                    preflightCommitment: 'confirmed'
+                    preflightCommitment: 'finalized'
                 });
                 
                 console.log('İşlem onayı bekleniyor...');
@@ -495,7 +488,7 @@ async function transferSOL(fromWallet, amount) {
                     signature,
                     blockhash,
                     lastValidBlockHeight
-                });
+                }, 'finalized');
                 
                 if (confirmation.value.err) {
                     throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
