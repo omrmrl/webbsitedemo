@@ -63,16 +63,15 @@ const notesPerPage = 20;
 let votedNotes = new Set();
 
 // Solana bağlantı ve transfer ayarları
-const SOLANA_NETWORK = 'mainnet-beta';
+const SOLANA_NETWORK = 'devnet';
 const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
 const NOTE_COST = 0.01;
 
-// Alternatif RPC endpoints
+// Alternatif RPC endpoints - Sadece Devnet endpoint'leri
 const RPC_ENDPOINTS = [
     'https://api.devnet.solana.com',
-    'https://solana-devnet.g.alchemy.com/v2/demo',
     'https://rpc.ankr.com/solana_devnet',
-    'https://solana-mainnet.g.alchemy.com/v2/demo'
+    'https://solana-devnet.g.alchemy.com/v2/demo'
 ];
 
 // Solana bağlantısını oluştur
@@ -372,6 +371,21 @@ async function checkTransactionSafety(fromWallet, amount) {
             try {
                 console.log(`Bakiye sorgusu deneme ${retryCount + 1}/${maxRetries}`);
                 const pubKey = new solanaWeb3.PublicKey(fromWallet);
+                
+                // Airdrop isteği gönder (sadece devnet için)
+                try {
+                    console.log('Devnet SOL talep ediliyor...');
+                    const airdropSignature = await connection.requestAirdrop(
+                        pubKey,
+                        2 * solanaWeb3.LAMPORTS_PER_SOL // 2 SOL talep et
+                    );
+                    await connection.confirmTransaction(airdropSignature);
+                    console.log('Airdrop başarılı!');
+                } catch (airdropError) {
+                    console.log('Airdrop başarısız, mevcut bakiye kontrol ediliyor:', airdropError);
+                }
+
+                // Bakiyeyi kontrol et
                 balance = await connection.getBalance(pubKey, 'confirmed');
                 console.log('Mevcut bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
                 break;
@@ -397,7 +411,7 @@ async function checkTransactionSafety(fromWallet, amount) {
         }
 
         if (balance < minBalance) {
-            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL. Lütfen Devnet'te test SOL almak için cüzdanınızı yeniden bağlayın.`);
         }
 
         console.log('Güvenlik kontrolü başarılı');
@@ -409,7 +423,7 @@ async function checkTransactionSafety(fromWallet, amount) {
         if (error.message.includes('Yetersiz bakiye')) {
             alert(error.message);
         } else {
-            alert('Bakiye sorgulanamadı. Lütfen ağ bağlantınızı kontrol edip tekrar deneyin.');
+            alert('Bakiye sorgulanamadı. Lütfen cüzdanınızı Devnet ağına geçirip tekrar deneyin.');
         }
         
         return false;
