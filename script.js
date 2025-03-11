@@ -352,38 +352,68 @@ function loadMore() {
 
 // Transfer işlemi için güvenlik kontrolleri
 async function checkTransactionSafety(fromWallet, amount) {
-  try {
-    if (!connection) {
-      const connected = await createConnection();
-      if (!connected) return false;
-    }
-
-    const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
-    
     try {
-      const balance = await connection.getBalance(new solanaWeb3.PublicKey(fromWallet));
-      
-      if (balance < minBalance) {
-        throw new Error('Yetersiz bakiye! İşlem ücreti ile birlikte minimum ' + (amount + 0.001) + ' SOL gerekli.');
-      }
-    } catch (balanceError) {
-      if (balanceError.message.includes('403')) {
-        // RPC endpoint'i değiştir ve tekrar dene
-        currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-        await createConnection();
-        return checkTransactionSafety(fromWallet, amount);
-      }
-      
-      console.error("Bakiye sorgulama hatası:", balanceError);
-      throw new Error('Bakiye sorgulanamadı. Lütfen tekrar deneyin.');
-    }
+        console.log('Güvenlik kontrolü başlatılıyor...');
+        
+        if (!connection) {
+            console.log('Bağlantı yok, yeni bağlantı oluşturuluyor...');
+            const connected = await createConnection();
+            if (!connected) {
+                throw new Error('Ağ bağlantısı kurulamadı');
+            }
+        }
 
-    return true;
-  } catch (error) {
-    console.error("Güvenlik kontrolü sırasında hata:", error);
-    alert(error.message);
-    return false;
-  }
+        const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
+        let balance = 0;
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (retryCount < maxRetries) {
+            try {
+                console.log(`Bakiye sorgusu deneme ${retryCount + 1}/${maxRetries}`);
+                const pubKey = new solanaWeb3.PublicKey(fromWallet);
+                balance = await connection.getBalance(pubKey, 'confirmed');
+                console.log('Mevcut bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
+                break;
+            } catch (balanceError) {
+                console.error(`Bakiye sorgulama hatası (${retryCount + 1}):`, balanceError);
+                
+                if (balanceError.message.includes('403') || balanceError.message.includes('429')) {
+                    console.log('RPC hatası, alternatif endpoint deneniyor...');
+                    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+                    await createConnection();
+                } else {
+                    throw balanceError;
+                }
+            }
+            retryCount++;
+            if (retryCount < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+
+        if (retryCount === maxRetries) {
+            throw new Error('Maksimum deneme sayısına ulaşıldı');
+        }
+
+        if (balance < minBalance) {
+            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+        }
+
+        console.log('Güvenlik kontrolü başarılı');
+        return true;
+
+    } catch (error) {
+        console.error("Güvenlik kontrolü sırasında hata:", error);
+        
+        if (error.message.includes('Yetersiz bakiye')) {
+            alert(error.message);
+        } else {
+            alert('Bakiye sorgulanamadı. Lütfen ağ bağlantınızı kontrol edip tekrar deneyin.');
+        }
+        
+        return false;
+    }
 }
 
 // SOL transfer işlemi
@@ -392,15 +422,19 @@ async function transferSOL(fromWallet, amount) {
         console.log('Transfer başlatılıyor...', { fromWallet, amount });
         
         const provider = getProvider();
-        if (!provider || !connection) {
-            console.error('Provider veya connection bulunamadı');
-            alert('Cüzdan bağlantısı veya ağ bağlantısı bulunamadı!');
-            return false;
+        if (!provider) {
+            throw new Error('Phantom cüzdan bağlantısı bulunamadı');
+        }
+
+        if (!connection) {
+            const connected = await createConnection();
+            if (!connected) {
+                throw new Error('Ağ bağlantısı kurulamadı');
+            }
         }
 
         const isSafe = await checkTransactionSafety(fromWallet, amount);
         if (!isSafe) {
-            console.log('Güvenlik kontrolü başarısız');
             return false;
         }
 
@@ -409,59 +443,73 @@ async function transferSOL(fromWallet, amount) {
         const toPubkey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
         const lamports = Math.floor(amount * solanaWeb3.LAMPORTS_PER_SOL);
 
-        const transaction = new solanaWeb3.Transaction().add(
-            solanaWeb3.SystemProgram.transfer({
-                fromPubkey,
-                toPubkey,
-                lamports
-            })
-        );
+        let retryCount = 0;
+        const maxRetries = 3;
+        
+        while (retryCount < maxRetries) {
+            try {
+                console.log('Blockhash alınıyor...');
+                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+                
+                const transaction = new solanaWeb3.Transaction().add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey,
+                        toPubkey,
+                        lamports
+                    })
+                );
 
-        try {
-            console.log('Blockhash alınıyor...');
-            const { blockhash } = await connection.getLatestBlockhash('finalized');
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = fromPubkey;
+                transaction.recentBlockhash = blockhash;
+                transaction.lastValidBlockHeight = lastValidBlockHeight;
+                transaction.feePayer = fromPubkey;
 
-            console.log('İşlem imzalanıyor...');
-            const signed = await provider.signTransaction(transaction);
-            
-            // Buffer hatası için değişiklik
-            console.log('İşlem serileştiriliyor...');
-            const serializedTransaction = signed.serialize({
-                requireAllSignatures: false,
-                verifySignatures: false
-            });
-            
-            console.log('İşlem gönderiliyor...');
-            const signature = await connection.sendRawTransaction(serializedTransaction, {
-                skipPreflight: false,
-                preflightCommitment: 'confirmed'
-            });
-            
-            console.log('İşlem onayı bekleniyor...');
-            const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-            
-            if (confirmation.value.err) {
-                console.error('İşlem onay hatası:', confirmation.value.err);
-                throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
+                console.log('İşlem imzalanıyor...');
+                const signed = await provider.signTransaction(transaction);
+                
+                console.log('İşlem serileştiriliyor...');
+                const serializedTransaction = signed.serialize();
+                
+                console.log('İşlem gönderiliyor...');
+                const signature = await connection.sendRawTransaction(serializedTransaction, {
+                    skipPreflight: false,
+                    maxRetries: 3,
+                    preflightCommitment: 'confirmed'
+                });
+                
+                console.log('İşlem onayı bekleniyor...');
+                const confirmation = await connection.confirmTransaction({
+                    signature,
+                    blockhash,
+                    lastValidBlockHeight
+                });
+                
+                if (confirmation.value.err) {
+                    throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
+                }
+
+                console.log('İşlem başarılı:', signature);
+                return true;
+
+            } catch (err) {
+                console.error(`İşlem hatası (${retryCount + 1}):`, err);
+                
+                if (err.message.includes('403') || err.message.includes('429')) {
+                    console.log('RPC hatası, alternatif endpoint deneniyor...');
+                    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+                    await createConnection();
+                } else {
+                    throw err;
+                }
             }
-
-            console.log('İşlem başarılı:', signature);
-            return true;
-
-        } catch (err) {
-            console.error('İşlem sırasında hata:', err);
-            if (err.message.includes('403')) {
-                console.log('403 hatası, alternatif endpoint deneniyor...');
-                currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-                await createConnection();
-                return transferSOL(fromWallet, amount);
+            
+            retryCount++;
+            if (retryCount < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
             }
-
-            alert('İşlem başarısız: ' + err.message);
-            return false;
         }
+
+        throw new Error('Maksimum deneme sayısına ulaşıldı');
+
     } catch (error) {
         console.error("SOL transfer sırasında hata:", error);
         alert('Transfer hatası: ' + error.message);
