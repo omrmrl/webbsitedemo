@@ -1,4 +1,4 @@
- // Buffer ve Web3.js kontrolü
+// Buffer ve Web3.js kontrolü
     if (typeof window !== 'undefined' && !window.Buffer) {
       console.error('Buffer tanımlı değil!');
     }
@@ -62,7 +62,7 @@
     const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
     const NOTE_COST = 0.01;
 
-    // RPC endpoint listesini, tarayıcı dostu olanı ilk sıraya alarak güncelledik.
+    // RPC endpoint listesini, CORS izinli olma olasılığı yüksek endpointlerle güncelledik.
     const RPC_ENDPOINTS = [
       'https://rpc.ankr.com/solana',
       'https://api.mainnet-beta.solana.com',
@@ -91,7 +91,7 @@
         connection = new solanaWeb3.Connection(endpoint, connectionConfig);
         console.log('Bağlantı nesnesi oluşturuldu');
 
-        // Bağlantı testi
+        // Bağlantı testi: Eğer 403 hatası alınıyorsa, bu endpoint tarayıcıdan istek kabul etmiyor demektir.
         console.log('Bağlantı test ediliyor...');
         const version = await connection.getVersion();
         console.log('Solana versiyon:', version);
@@ -99,7 +99,7 @@
       } catch (error) {
         console.error("RPC bağlantısı başarısız:", error);
 
-        // Hata mesajı veya response kontrolü ile 403/429 durumunu algılayıp alternatif endpoint deneyelim.
+        // 403 veya 429 hatası alındıysa, alternatif endpoint deneniyor.
         if (error.message.includes('403') || error.message.includes('429')) {
           console.log('403/429 hatası, alternatif endpoint deneniyor...');
           currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
@@ -109,8 +109,8 @@
           }
         }
 
-        // Eğer tüm endpoint’ler başarısız olursa, CORS kısıtlaması veya API anahtar gereksinimine dikkat edin.
-        alert('Solana ağına bağlanılamıyor. Tarayıcı kısıtlamaları veya API anahtarı gereksinimi olabilir. Gerekirse bir backend proxy kullanın.');
+        // Eğer tüm endpoint’ler başarısız olursa:
+        alert('Solana ağına bağlanılamıyor. Bu durum, tarayıcı CORS kısıtlamaları veya API anahtarı gereksinimi nedeniyle olabilir. Lütfen isteklerinizi backend proxy üzerinden yönlendirmeyi düşünün.');
         return false;
       }
     }
