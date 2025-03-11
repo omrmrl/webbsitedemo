@@ -67,11 +67,11 @@ const SOLANA_NETWORK = 'mainnet-beta';
 const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
 const NOTE_COST = 0.01;
 
-// Alternatif RPC endpoints - Mainnet için güvenilir endpoint'ler
+// Alternatif RPC endpoints - CORS destekli endpoint'ler
 const RPC_ENDPOINTS = [
-    'https://api.mainnet-beta.solana.com',
-    'https://solana-api.projectserum.com',
-    'https://solana.public-rpc.com'
+    'https://rpc.ankr.com/solana',
+    'https://solana.getblock.io/mainnet-beta',
+    'https://solana.api.chainstack.com/mainnet-beta'
 ];
 
 // Solana bağlantısını oluştur
@@ -88,9 +88,10 @@ async function createConnection() {
             commitment: 'confirmed',
             confirmTransactionInitialTimeout: 60000,
             disableRetryOnRateLimit: false,
-            wsEndpoint: endpoint.replace('https://', 'wss://'),
+            fetch: fetch.bind(window),
             httpHeaders: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Origin': window.location.origin
             }
         };
 
@@ -104,8 +105,8 @@ async function createConnection() {
         // Test bağlantıyı
         try {
             console.log('Bağlantı test ediliyor...');
-            const version = await connection.getVersion();
-            console.log('Bağlantı başarılı, versiyon:', version);
+            const slot = await connection.getSlot();
+            console.log('Bağlantı başarılı, slot:', slot);
             return true;
         } catch (testError) {
             console.error('Bağlantı testi başarısız:', testError);
