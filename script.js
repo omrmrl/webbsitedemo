@@ -69,7 +69,7 @@ const NOTE_COST = 0.01;
 
 // Alternatif RPC endpoints - CORS destekli endpoint'ler
 const RPC_ENDPOINTS = [
-    'https://api.mainnet-beta.solana.com',
+    'https://api.devnet.solana.com',
     'https://solana-api.projectserum.com',
     'https://free.rpcpool.com',
     'https://solana.public-rpc.com'
@@ -86,15 +86,16 @@ async function createConnection() {
         console.log('Seçilen endpoint:', endpoint);
 
         const connectionConfig = {
-            commitment: 'confirmed',
+            commitment: 'processed',
             confirmTransactionInitialTimeout: 60000,
             disableRetryOnRateLimit: false,
             fetch: window.fetch.bind(window),
             httpHeaders: {
                 'Content-Type': 'application/json',
-                'Origin': window.location.origin,
-                'Accept': '*/*'
-            }
+                'Origin': '*',
+                'Access-Control-Allow-Origin': '*'
+            },
+            wsEndpoint: null // WebSocket devre dışı bırakıldı
         };
 
         connection = new solanaWeb3.Connection(endpoint, connectionConfig);
@@ -102,11 +103,18 @@ async function createConnection() {
         // Test bağlantıyı
         try {
             console.log('Bağlantı test ediliyor...');
-            await connection.getVersion();
-            console.log('Bağlantı başarılı');
+            const version = await connection.getVersion();
+            console.log('Bağlantı başarılı, versiyon:', version);
             return true;
         } catch (testError) {
             console.error('Bağlantı testi başarısız:', testError);
+            
+            // Rate limit veya CORS hatası durumunda
+            if (testError.message.includes('403') || 
+                testError.message.includes('429') || 
+                testError.message.includes('CORS')) {
+                throw new Error('Erişim engellendi, alternatif endpoint deneniyor...');
+            }
             throw testError;
         }
     } catch (error) {
@@ -115,7 +123,7 @@ async function createConnection() {
         if (currentEndpointIndex < RPC_ENDPOINTS.length - 1) {
             console.log('Alternatif endpoint deneniyor...');
             currentEndpointIndex++;
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(resolve => setTimeout(resolve, 1000));
             return createConnection();
         }
         
@@ -359,6 +367,12 @@ async function checkTransactionSafety(fromWallet, amount) {
                 console.log(`Bakiye sorgusu deneme ${retryCount + 1}/${maxRetries}`);
                 const pubKey = new solanaWeb3.PublicKey(fromWallet);
                 
+                // Her denemede farklı bir endpoint kullan
+                if (retryCount > 0) {
+                    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+                    await createConnection();
+                }
+                
                 balance = await connection.getBalance(pubKey, 'confirmed');
                 console.log('Mevcut bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
                 break;
@@ -405,7 +419,10 @@ async function transferSOL(fromWallet, amount) {
         }
 
         if (!connection) {
-            await createConnection();
+            const connected = await createConnection();
+            if (!connected) {
+                throw new Error('Ağ bağlantısı kurulamadı');
+            }
         }
 
         const isSafe = await checkTransactionSafety(fromWallet, amount);
