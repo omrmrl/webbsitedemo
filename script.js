@@ -69,9 +69,9 @@ const NOTE_COST = 0.01;
 
 // Alternatif RPC endpoints - Mainnet için güvenilir endpoint'ler
 const RPC_ENDPOINTS = [
-    'https://api.mainnet-beta.solana.com',
-    'https://solana-api.projectserum.com',
-    'https://rpc.ankr.com/solana'
+    'https://solana-mainnet.g.alchemy.com/v2/demo',  // Demo API anahtarı
+    'https://rpc.ankr.com/solana_devnet',           // Ücretsiz devnet endpoint
+    'https://api.mainnet-beta.solana.com'           // Yedek endpoint
 ];
 
 // Solana bağlantısını oluştur
@@ -90,7 +90,8 @@ async function createConnection() {
             disableRetryOnRateLimit: false,
             httpHeaders: {
                 'Origin': window.location.origin,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
         };
 
@@ -104,8 +105,8 @@ async function createConnection() {
         // Test bağlantıyı
         try {
             console.log('Bağlantı test ediliyor...');
-            const blockHeight = await connection.getBlockHeight();
-            console.log('Bağlantı başarılı, block height:', blockHeight);
+            const slot = await connection.getSlot();
+            console.log('Bağlantı başarılı, slot:', slot);
             return true;
         } catch (testError) {
             console.error('Bağlantı testi başarısız:', testError);
