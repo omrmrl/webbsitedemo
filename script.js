@@ -44,22 +44,56 @@ const SOLANA_NETWORK = 'mainnet-beta';
 const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
 const NOTE_COST = 0.01;
 
+// Alternatif RPC endpoints
+const RPC_ENDPOINTS = [
+  'https://api.mainnet-beta.solana.com',
+  'https://solana-mainnet.g.alchemy.com/v2/demo',
+  'https://rpc.ankr.com/solana',
+  'https://mainnet.rpcpool.com'
+];
+
 // Solana bağlantısını oluştur
 let connection;
-try {
-  connection = new solanaWeb3.Connection(
-    'https://api.mainnet-beta.solana.com',
-    {
+let currentEndpointIndex = 0;
+
+async function createConnection() {
+  try {
+    const endpoint = RPC_ENDPOINTS[currentEndpointIndex];
+    const connectionConfig = {
       commitment: 'confirmed',
-      wsEndpoint: 'wss://api.mainnet-beta.solana.com/',
+      confirmTransactionInitialTimeout: 60000,
+      disableRetryOnRateLimit: false,
       httpHeaders: {
-        'Origin': window.location.origin
+        'Origin': window.location.origin,
+        'Content-Type': 'application/json'
       }
+    };
+
+    connection = new solanaWeb3.Connection(endpoint, connectionConfig);
+    
+    // Test bağlantıyı
+    await connection.getSlot().catch(error => {
+      throw new Error('Bağlantı testi başarısız: ' + error.message);
+    });
+
+    console.log('Bağlantı başarılı:', endpoint);
+    return true;
+  } catch (error) {
+    console.error("RPC bağlantısı başarısız:", error);
+    
+    // Diğer endpoint'i dene
+    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+    if (currentEndpointIndex !== 0) {
+      return createConnection();
     }
-  );
-} catch (error) {
-  console.error("Solana bağlantısı oluşturulamadı:", error);
+    
+    alert('Solana ağına bağlanılamıyor. Lütfen daha sonra tekrar deneyin.');
+    return false;
+  }
 }
+
+// İlk bağlantıyı oluştur
+createConnection();
 
 // LocalStorage'dan verileri yükle
 function loadFromLocalStorage() {
@@ -250,6 +284,11 @@ function loadMore() {
 // Transfer işlemi için güvenlik kontrolleri
 async function checkTransactionSafety(fromWallet, amount) {
   try {
+    if (!connection) {
+      const connected = await createConnection();
+      if (!connected) return false;
+    }
+
     const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
     
     try {
@@ -259,20 +298,15 @@ async function checkTransactionSafety(fromWallet, amount) {
         throw new Error('Yetersiz bakiye! İşlem ücreti ile birlikte minimum ' + (amount + 0.001) + ' SOL gerekli.');
       }
     } catch (balanceError) {
-      console.error("Bakiye sorgulama hatası:", balanceError);
-      console.warn("Bakiye sorgulanamadı, işleme devam ediliyor...");
-    }
-
-    try {
-      const receiverKey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
-      const receiverAccount = await connection.getAccountInfo(receiverKey);
-      
-      if (!receiverAccount) {
-        console.warn('Alıcı hesap bilgisi alınamadı, işleme devam ediliyor...');
+      if (balanceError.message.includes('403')) {
+        // RPC endpoint'i değiştir ve tekrar dene
+        currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+        await createConnection();
+        return checkTransactionSafety(fromWallet, amount);
       }
-    } catch (receiverError) {
-      console.error("Alıcı hesap kontrolü hatası:", receiverError);
-      console.warn("Alıcı hesap kontrolü yapılamadı, işleme devam ediliyor...");
+      
+      console.error("Bakiye sorgulama hatası:", balanceError);
+      throw new Error('Bakiye sorgulanamadı. Lütfen tekrar deneyin.');
     }
 
     return true;
@@ -295,40 +329,46 @@ async function transferSOL(fromWallet, amount) {
     const isSafe = await checkTransactionSafety(fromWallet, amount);
     if (!isSafe) return false;
 
+    const fromPubkey = new solanaWeb3.PublicKey(fromWallet);
+    const toPubkey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
+    const lamports = Math.floor(amount * solanaWeb3.LAMPORTS_PER_SOL);
+
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
-        fromPubkey: new solanaWeb3.PublicKey(fromWallet),
-        toPubkey: new solanaWeb3.PublicKey(RECEIVER_ADDRESS),
-        lamports: amount * solanaWeb3.LAMPORTS_PER_SOL
+        fromPubkey,
+        toPubkey,
+        lamports
       })
     );
 
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = new solanaWeb3.PublicKey(fromWallet);
-
     try {
+      const { blockhash } = await connection.getLatestBlockhash('finalized');
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = fromPubkey;
+
       const signed = await provider.signTransaction(transaction);
-      
       const signature = await connection.sendRawTransaction(signed.serialize(), {
         skipPreflight: false,
         preflightCommitment: 'confirmed'
       });
-
-      const confirmation = await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      });
-
+      
+      const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+      
       if (confirmation.value.err) {
-        throw new Error('İşlem onaylanmadı: ' + confirmation.value.err.toString());
+        throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
       }
 
       console.log('İşlem başarılı:', signature);
       return true;
 
     } catch (err) {
+      if (err.message.includes('403')) {
+        // RPC endpoint'i değiştir ve tekrar dene
+        currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+        await createConnection();
+        return transferSOL(fromWallet, amount);
+      }
+
       console.error("Transfer işlemi başarısız:", err);
       alert('İşlem başarısız: ' + err.message);
       return false;
@@ -415,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFromLocalStorage();
     updateWalletDisplay();
     updateShareFormVisibility();
-    setupEventListeners();
     displayNotes();
   } catch (error) {
     console.error("Sayfa yüklenirken hata:", error);
