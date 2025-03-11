@@ -40,8 +40,8 @@ const notesPerPage = 20;
 let votedNotes = new Set();
 
 // Solana bağlantı ve transfer ayarları
-const SOLANA_NETWORK = 'devnet'; // Test için devnet kullanıyoruz
-const RECEIVER_ADDRESS = 'YOUR_RECEIVER_WALLET_ADDRESS'; // Buraya kendi cüzdan adresinizi yazın
+const SOLANA_NETWORK = 'mainnet-beta'; // Mainnet kullanımı için
+const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE'; // Buraya kendi mainnet cüzdan adresinizi yazın
 const NOTE_COST = 0.01; // SOL cinsinden ücret
 
 // Solana bağlantısını oluştur
@@ -49,7 +49,10 @@ let connection;
 try {
   connection = new solanaWeb3.Connection(
     solanaWeb3.clusterApiUrl(SOLANA_NETWORK),
-    'confirmed'
+    {
+      commitment: 'confirmed',
+      wsEndpoint: 'wss://api.mainnet-beta.solana.com/'
+    }
   );
 } catch (error) {
   console.error("Solana bağlantısı oluşturulamadı:", error);
@@ -243,49 +246,93 @@ function loadMore() {
   }
 }
 
+// Transfer işlemi için güvenlik kontrolleri
+async function checkTransactionSafety(fromWallet, amount) {
+  try {
+    // Minimum bakiye kontrolü (işlem ücreti için ekstra 0.001 SOL)
+    const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
+    const balance = await connection.getBalance(new solanaWeb3.PublicKey(fromWallet));
+    
+    if (balance < minBalance) {
+      throw new Error('Yetersiz bakiye! İşlem ücreti ile birlikte minimum ' + (amount + 0.001) + ' SOL gerekli.');
+    }
+
+    // Alıcı adres kontrolü
+    const receiverKey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
+    const receiverAccount = await connection.getAccountInfo(receiverKey);
+    
+    if (!receiverAccount) {
+      throw new Error('Alıcı hesap bulunamadı! Lütfen adresin doğruluğunu kontrol edin.');
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Güvenlik kontrolü sırasında hata:", error);
+    alert(error.message);
+    return false;
+  }
+}
+
 // SOL transfer işlemi
 async function transferSOL(fromWallet, amount) {
   try {
     const provider = getProvider();
-    if (!provider || !connection) return false;
-
-    // Bakiye kontrolü
-    const balance = await connection.getBalance(new solanaWeb3.PublicKey(fromWallet));
-    const requiredBalance = amount * solanaWeb3.LAMPORTS_PER_SOL;
-    
-    if (balance < requiredBalance) {
-      alert('Yetersiz bakiye! Lütfen cüzdanınıza SOL yükleyin.');
+    if (!provider || !connection) {
+      alert('Cüzdan bağlantısı veya ağ bağlantısı bulunamadı!');
       return false;
     }
 
+    // Güvenlik kontrollerini yap
+    const isSafe = await checkTransactionSafety(fromWallet, amount);
+    if (!isSafe) return false;
+
+    // İşlem oluştur
     const transaction = new solanaWeb3.Transaction().add(
       solanaWeb3.SystemProgram.transfer({
         fromPubkey: new solanaWeb3.PublicKey(fromWallet),
         toPubkey: new solanaWeb3.PublicKey(RECEIVER_ADDRESS),
-        lamports: requiredBalance
+        lamports: amount * solanaWeb3.LAMPORTS_PER_SOL
       })
     );
 
-    const { blockhash } = await connection.getRecentBlockhash();
+    // Son blok hash'ini al
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = new solanaWeb3.PublicKey(fromWallet);
 
     try {
+      // İşlemi imzala
       const signed = await provider.signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize());
-      const confirmation = await connection.confirmTransaction(signature);
       
+      // İşlemi gönder
+      const signature = await connection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed'
+      });
+
+      // İşlemi onayla ve bekle
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      });
+
       if (confirmation.value.err) {
-        throw new Error('Transaction failed');
+        throw new Error('İşlem onaylanmadı: ' + confirmation.value.err.toString());
       }
-      
+
+      // İşlem başarılı
+      console.log('İşlem başarılı:', signature);
       return true;
+
     } catch (err) {
       console.error("Transfer işlemi başarısız:", err);
+      alert('İşlem başarısız: ' + err.message);
       return false;
     }
   } catch (error) {
     console.error("SOL transfer sırasında hata:", error);
+    alert('Transfer hatası: ' + error.message);
     return false;
   }
 }
