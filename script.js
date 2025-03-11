@@ -69,9 +69,9 @@ const NOTE_COST = 0.01;
 
 // Alternatif RPC endpoints - Mainnet için güvenilir endpoint'ler
 const RPC_ENDPOINTS = [
-    'https://solana-mainnet.g.alchemy.com/v2/demo',  // Demo API anahtarı
-    'https://rpc.ankr.com/solana_devnet',           // Ücretsiz devnet endpoint
-    'https://api.mainnet-beta.solana.com'           // Yedek endpoint
+    'https://solana-mainnet.g.alchemy.com/v2/YOUR_API_KEY',  // Buraya Alchemy API anahtarınızı ekleyin
+    'https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY',  // Buraya Helius API anahtarınızı ekleyin
+    'https://rpc.ankr.com/solana/YOUR_API_KEY'               // Buraya Ankr API anahtarınızı ekleyin
 ];
 
 // Solana bağlantısını oluştur
@@ -85,13 +85,11 @@ async function createConnection() {
         console.log('Seçilen endpoint:', endpoint);
 
         const connectionConfig = {
-            commitment: 'processed',
+            commitment: 'finalized',  // Mainnet için en güvenli seçenek
             confirmTransactionInitialTimeout: 60000,
             disableRetryOnRateLimit: false,
             httpHeaders: {
-                'Origin': window.location.origin,
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
             }
         };
 
@@ -105,8 +103,8 @@ async function createConnection() {
         // Test bağlantıyı
         try {
             console.log('Bağlantı test ediliyor...');
-            const slot = await connection.getSlot();
-            console.log('Bağlantı başarılı, slot:', slot);
+            const latestBlockhash = await connection.getLatestBlockhash();
+            console.log('Bağlantı başarılı, blockhash:', latestBlockhash.blockhash);
             return true;
         } catch (testError) {
             console.error('Bağlantı testi başarısız:', testError);
