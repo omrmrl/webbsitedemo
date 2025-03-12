@@ -23,6 +23,7 @@ const shareForm = document.getElementById('shareForm');
 const walletWarning = document.getElementById('walletWarning');
 const walletDropdown = document.querySelector('.wallet-dropdown');
 const disconnectWalletButton = document.getElementById('disconnectWallet');
+const walletBalanceDisplay = document.getElementById('walletBalance') || document.createElement('div'); // Bakiye gösterimi için
 
 // Test için element kontrolü
 console.log('HTML elementleri yüklendi:', {
@@ -61,15 +62,18 @@ let walletAddress = null;
 let currentPage = 1;
 const notesPerPage = 20;
 let votedNotes = new Set();
+let walletBalance = 0; // Cüzdan bakiyesi için değişken
 
 // Solana bağlantı ve transfer ayarları
 const SOLANA_NETWORK = 'mainnet-beta';
 const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
 const NOTE_COST = 0.01;
 
-// Alternatif RPC endpoints - CORS destekli endpoint'ler
+// Daha güvenilir RPC endpoints - CORS destekli endpoint'ler
 const RPC_ENDPOINTS = [
-    'https://api.devnet.solana.com',
+    'https://api.mainnet-beta.solana.com',
+    'https://solana-mainnet.g.alchemy.com/v2/demo',
+    'https://rpc.ankr.com/solana',
     'https://solana-api.projectserum.com',
     'https://free.rpcpool.com',
     'https://solana.public-rpc.com'
@@ -86,14 +90,12 @@ async function createConnection() {
         console.log('Seçilen endpoint:', endpoint);
 
         const connectionConfig = {
-            commitment: 'processed',
+            commitment: 'confirmed', // 'processed' yerine 'confirmed' kullanıldı
             confirmTransactionInitialTimeout: 60000,
             disableRetryOnRateLimit: false,
             fetch: window.fetch.bind(window),
             httpHeaders: {
-                'Content-Type': 'application/json',
-                'Origin': '*',
-                'Access-Control-Allow-Origin': '*'
+                'Content-Type': 'application/json'
             },
             wsEndpoint: null // WebSocket devre dışı bırakıldı
         };
@@ -182,6 +184,8 @@ function loadFromLocalStorage() {
     if (savedWalletAddress) {
       walletAddress = savedWalletAddress;
       updateWalletDisplay();
+      // Cüzdan bağlandığında bakiyeyi güncelle
+      updateWalletBalance();
     }
   } catch (error) {
     console.error("LocalStorage'dan veri yüklenirken hata:", error);
@@ -201,6 +205,55 @@ function saveToLocalStorage() {
   } catch (error) {
     console.error("LocalStorage'a veri kaydedilirken hata:", error);
   }
+}
+
+// Cüzdan bakiyesini güncelle
+async function updateWalletBalance() {
+    if (!walletAddress) return;
+    
+    try {
+        if (!connection) {
+            await createConnection();
+        }
+        
+        // Her seferinde farklı endpointleri dene
+        for (let i = 0; i < RPC_ENDPOINTS.length; i++) {
+            try {
+                const pubKey = new solanaWeb3.PublicKey(walletAddress);
+                const endpoint = RPC_ENDPOINTS[(currentEndpointIndex + i) % RPC_ENDPOINTS.length];
+                console.log(`Bakiye sorgusu için endpoint: ${endpoint}`);
+                
+                const tempConnection = new solanaWeb3.Connection(endpoint, {
+                    commitment: 'confirmed',
+                    disableRetryOnRateLimit: false
+                });
+                
+                const balance = await tempConnection.getBalance(pubKey);
+                walletBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                console.log('Cüzdan bakiyesi güncellendi:', walletBalance);
+                
+                // Bakiyeyi ekranda göster
+                if (walletBalanceDisplay) {
+                    walletBalanceDisplay.textContent = `${walletBalance.toFixed(4)} SOL`;
+                }
+                
+                // Bakiye kontrolü - Uyarı göster
+                if (walletBalance < NOTE_COST + 0.001) {
+                    alert(`Uyarı: Cüzdan bakiyeniz düşük (${walletBalance.toFixed(4)} SOL). Not paylaşmak için en az ${(NOTE_COST + 0.001).toFixed(4)} SOL gereklidir.`);
+                }
+                
+                return;
+            } catch (error) {
+                console.error(`Bakiye sorgusu başarısız (${i + 1}/${RPC_ENDPOINTS.length}):`, error);
+                if (i === RPC_ENDPOINTS.length - 1) {
+                    console.error('Tüm bakiye sorguları başarısız oldu.');
+                    alert('Bakiye bilgisi alınamıyor. Lütfen ağ bağlantınızı kontrol edin.');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Bakiye güncellenirken hata:', error);
+    }
 }
 
 // Phantom cüzdan kontrolü
@@ -230,6 +283,15 @@ function updateWalletDisplay() {
       connectWalletButton.style.display = 'none';
       walletDropdown.style.display = 'block';
       walletAddressDiv.textContent = `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}`;
+      
+      // Bakiye gösterimi için yeni element
+      if (!document.getElementById('walletBalance')) {
+          const balanceDiv = document.createElement('div');
+          balanceDiv.id = 'walletBalance';
+          balanceDiv.className = 'wallet-balance';
+          balanceDiv.textContent = 'Yükleniyor...';
+          walletDropdown.prepend(balanceDiv);
+      }
     } else {
       connectWalletButton.style.display = 'block';
       walletDropdown.style.display = 'none';
@@ -258,6 +320,10 @@ async function connectWallet() {
     walletAddress = response.publicKey.toString();
     updateWalletDisplay();
     updateShareFormVisibility();
+    
+    // Bakiyeyi al ve göster
+    await updateWalletBalance();
+    
     saveToLocalStorage();
     displayNotes();
     
@@ -276,6 +342,7 @@ async function disconnectWallet() {
     }
     
     walletAddress = null;
+    walletBalance = 0;
     updateWalletDisplay();
     updateShareFormVisibility();
     saveToLocalStorage();
@@ -347,11 +414,26 @@ function loadMore() {
   }
 }
 
-// Transfer işlemi için güvenlik kontrolleri
+// Transfer işlemi için güvenlik kontrolleri - YENİLENDİ
 async function checkTransactionSafety(fromWallet, amount) {
     try {
         console.log('Güvenlik kontrolü başlatılıyor...');
+        console.log('Cüzdan adresi:', fromWallet);
+        console.log('İşlem miktarı:', amount, 'SOL');
         
+        // Yerel bakiye kullan (eğer varsa)
+        if (walletBalance > 0) {
+            console.log('Kaydedilen bakiye:', walletBalance, 'SOL');
+            const requiredAmount = amount + 0.001;
+            console.log('Gerekli bakiye:', requiredAmount, 'SOL');
+            
+            if (walletBalance >= requiredAmount) {
+                console.log('Bakiye yeterli, işlem onaylandı!');
+                return true;
+            }
+        }
+        
+        // Yerel bakiye yok veya yetersiz, RPC ile kontrol et
         if (!connection) {
             console.log('Bağlantı yok, yeni bağlantı oluşturuluyor...');
             await createConnection();
@@ -359,36 +441,46 @@ async function checkTransactionSafety(fromWallet, amount) {
 
         const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
         let balance = 0;
-        let retryCount = 0;
-        const maxRetries = 3;
+        let successful = false;
         
-        while (retryCount < maxRetries) {
+        // Tüm RPC noktalarını dene
+        for (let i = 0; i < RPC_ENDPOINTS.length; i++) {
             try {
-                console.log(`Bakiye sorgusu deneme ${retryCount + 1}/${maxRetries}`);
-                const pubKey = new solanaWeb3.PublicKey(fromWallet);
+                const endpoint = RPC_ENDPOINTS[(currentEndpointIndex + i) % RPC_ENDPOINTS.length];
+                console.log(`Bakiye sorgusu için endpoint: ${endpoint}`);
                 
-                // Her denemede farklı bir endpoint kullan
-                if (retryCount > 0) {
-                    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-                    await createConnection();
+                const tempConnection = new solanaWeb3.Connection(endpoint, {
+                    commitment: 'confirmed',
+                    disableRetryOnRateLimit: false
+                });
+                
+                const pubKey = new solanaWeb3.PublicKey(fromWallet);
+                balance = await tempConnection.getBalance(pubKey);
+                console.log('Mevcut bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
+                
+                // Bakiyeyi güncelle
+                walletBalance = balance / solanaWeb3.LAMPORTS_PER_SOL;
+                if (walletBalanceDisplay) {
+                    walletBalanceDisplay.textContent = `${walletBalance.toFixed(4)} SOL`;
                 }
                 
-                balance = await connection.getBalance(pubKey, 'confirmed');
-                console.log('Mevcut bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
+                successful = true;
                 break;
             } catch (balanceError) {
-                console.error(`Bakiye sorgulama hatası (${retryCount + 1}):`, balanceError);
-                
-                if (retryCount === maxRetries - 1) {
-                    throw new Error('Bakiye sorgulanamadı. Lütfen tekrar deneyin.');
+                console.error(`Bakiye sorgulama hatası (${i + 1}/${RPC_ENDPOINTS.length}):`, balanceError);
+                if (i === RPC_ENDPOINTS.length - 1) {
+                    throw new Error('Bakiye sorgulanamadı. Ağ bağlantısı sorunu olabilir.');
                 }
             }
-            retryCount++;
-            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        if (!successful) {
+            throw new Error('Bakiye sorgulanamadı. Lütfen tekrar deneyin.');
         }
 
         if (balance < minBalance) {
-            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli.`);
+            console.error(`Bakiye yetersiz: Mevcut=${balance / solanaWeb3.LAMPORTS_PER_SOL}, Gerekli=${minBalance / solanaWeb3.LAMPORTS_PER_SOL}`);
+            throw new Error(`Yetersiz bakiye! İşlem ücreti ile birlikte minimum ${(amount + 0.001).toFixed(4)} SOL gerekli. Cüzdanınızda ${(balance / solanaWeb3.LAMPORTS_PER_SOL).toFixed(4)} SOL var.`);
         }
 
         return true;
@@ -400,7 +492,7 @@ async function checkTransactionSafety(fromWallet, amount) {
     }
 }
 
-// SOL transfer işlemi
+// SOL transfer işlemi - YENİLENDİ
 async function transferSOL(fromWallet, amount) {
     try {
         console.log('Transfer başlatılıyor...', { fromWallet, amount });
@@ -425,6 +517,13 @@ async function transferSOL(fromWallet, amount) {
             }
         }
 
+        // İşlem onayı modal/popup göstermek için
+        const confirmTransfer = confirm(`${amount} SOL transfer edilecek. Onaylıyor musunuz?`);
+        if (!confirmTransfer) {
+            console.log('Kullanıcı işlemi iptal etti');
+            return false;
+        }
+
         const isSafe = await checkTransactionSafety(fromWallet, amount);
         if (!isSafe) {
             return false;
@@ -441,7 +540,7 @@ async function transferSOL(fromWallet, amount) {
         while (retryCount < maxRetries) {
             try {
                 console.log('Blockhash alınıyor...');
-                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
                 
                 const transaction = new solanaWeb3.Transaction().add(
                     solanaWeb3.SystemProgram.transfer({
@@ -465,7 +564,7 @@ async function transferSOL(fromWallet, amount) {
                 const signature = await connection.sendRawTransaction(serializedTransaction, {
                     skipPreflight: false,
                     maxRetries: 3,
-                    preflightCommitment: 'finalized'
+                    preflightCommitment: 'confirmed'
                 });
                 
                 console.log('İşlem onayı bekleniyor...');
@@ -473,13 +572,19 @@ async function transferSOL(fromWallet, amount) {
                     signature,
                     blockhash,
                     lastValidBlockHeight
-                }, 'finalized');
+                }, 'confirmed');
                 
                 if (confirmation.value.err) {
                     throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
                 }
 
                 console.log('İşlem başarılı:', signature);
+                
+                // Bakiyeyi güncelle - gecikme ekle ve bakiyeyi yenile
+                setTimeout(async () => {
+                    await updateWalletBalance();
+                }, 2000);
+                
                 return true;
 
             } catch (err) {
@@ -571,6 +676,16 @@ function vote(noteId, voteType) {
   }
 }
 
+// Periyodik olarak bakiye kontrolü
+function startBalanceCheck() {
+    // Her 30 saniyede bir bakiyeyi kontrol et
+    setInterval(async () => {
+        if (walletAddress) {
+            await updateWalletBalance();
+        }
+    }, 30000);
+}
+
 // Event Listener'ları
 document.addEventListener('DOMContentLoaded', () => {
     try {
@@ -580,6 +695,8 @@ document.addEventListener('DOMContentLoaded', () => {
         updateWalletDisplay();
         updateShareFormVisibility();
         displayNotes();
+        // Periyodik bakiye kontrolünü başlat
+        startBalanceCheck();
         console.log('Başlangıç işlemleri tamamlandı');
     } catch (error) {
         console.error("Sayfa yüklenirken hata:", error);
@@ -602,44 +719,4 @@ document.addEventListener('click', (event) => {
 connectWalletButton.addEventListener('click', connectWallet);
 disconnectWalletButton.addEventListener('click', disconnectWallet);
 
-// Not paylaşma işlemi
-shareNoteButton.addEventListener('click', async () => {
-  if (!walletAddress) {
-    alert('Not paylaşmak için cüzdanınızı bağlamalısınız!');
-    return;
-  }
-
-  const content = noteInput.value.trim();
-  if (content.length === 0) {
-    alert('Not boş olamaz!');
-    return;
-  }
-
-  if (content.length > 280) {
-    alert('Not 280 karakterden uzun olamaz!');
-    return;
-  }
-
-  const paymentSuccess = await transferSOL(walletAddress, NOTE_COST);
-  
-  if (!paymentSuccess) {
-    alert('Ödeme başarısız. Lütfen tekrar deneyin.');
-    return;
-  }
-
-  const newNote = {
-    id: Date.now(),
-    content: content,
-    likes: 0,
-    dislikes: 0,
-    size: ["small", "medium", "tall"][Math.floor(Math.random() * 3)]
-  };
-
-  notes.unshift(newNote);
-  noteInput.value = '';
-  currentPage = 1;
-  saveToLocalStorage();
-  displayNotes();
-  showSection('home');
-  alert('Not başarıyla paylaşıldı!');
-}); 
+// Not
