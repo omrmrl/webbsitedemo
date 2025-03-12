@@ -232,13 +232,26 @@ const ADMIN_WALLET = '5W9VDUNTXWmmpCfZz5ZPi5tWZ8GyANuHbvjgv2jvKypX'; // Admin c�
 
 // Admin kontrolü
 function isAdmin() {
+    console.log('Admin kontrolü yapılıyor...');
+    console.log('Bağlı cüzdan:', walletAddress);
+    console.log('Admin cüzdan:', ADMIN_WALLET);
     return walletAddress === ADMIN_WALLET;
 }
 
 // Admin paneli gösterme
 function showAdminPanel() {
+    console.log('Admin paneli gösterme fonksiyonu çağrıldı');
     if (!isAdmin()) {
+        console.log('Admin değil, panel gösterilmiyor');
         return;
+    }
+
+    console.log('Admin doğrulandı, panel hazırlanıyor');
+    
+    // Mevcut paneli kaldır
+    const existingPanel = document.getElementById('adminPanel');
+    if (existingPanel) {
+        existingPanel.remove();
     }
 
     const adminSection = document.createElement('div');
@@ -266,14 +279,9 @@ function showAdminPanel() {
         </div>
     `;
 
-    // Mevcut admin panelini kaldır
-    const existingPanel = document.getElementById('adminPanel');
-    if (existingPanel) {
-        existingPanel.remove();
-    }
-
-    // Yeni paneli ekle
+    // Paneli sayfaya ekle
     document.body.appendChild(adminSection);
+    console.log('Admin paneli başarıyla eklendi');
 }
 
 // Admin not düzenleme
@@ -350,8 +358,10 @@ async function connectWallet() {
     saveToLocalStorage();
     displayNotes();
     
-    // Admin ise paneli göster
+    // Admin kontrolü ve panel gösterimi
+    console.log('Cüzdan bağlandı, admin kontrolü yapılıyor');
     if (isAdmin()) {
+        console.log('Admin cüzdan tespit edildi');
         showAdminPanel();
     }
     
@@ -743,4 +753,3 @@ shareNoteButton.addEventListener('click', async () => {
   showSection('home');
   alert('Not başarıyla paylaşıldı!');
 });
-
