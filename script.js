@@ -227,6 +227,108 @@ function updateWalletDisplay() {
   }
 }
 
+// Admin ayarları
+const ADMIN_WALLET = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE'; // Admin cüzdan adresi
+
+// Admin kontrolü
+function isAdmin() {
+    return walletAddress === ADMIN_WALLET;
+}
+
+// Admin paneli gösterme
+function showAdminPanel() {
+    if (!isAdmin()) {
+        return;
+    }
+
+    const adminSection = document.createElement('div');
+    adminSection.id = 'adminPanel';
+    adminSection.className = 'admin-panel';
+    adminSection.innerHTML = `
+        <h2>Admin Paneli</h2>
+        <div class="admin-stats">
+            <p>Toplam Not: ${notes.length}</p>
+            <p>Toplam Beğeni: ${notes.reduce((sum, note) => sum + note.likes, 0)}</p>
+            <p>Toplam Beğenmeme: ${notes.reduce((sum, note) => sum + note.dislikes, 0)}</p>
+        </div>
+        <div class="admin-notes">
+            <h3>Tüm Notlar</h3>
+            ${notes.map(note => `
+                <div class="admin-note">
+                    <p>ID: ${note.id}</p>
+                    <textarea id="note-${note.id}">${note.content}</textarea>
+                    <div class="admin-buttons">
+                        <button onclick="adminEditNote(${note.id})">Düzenle</button>
+                        <button onclick="adminDeleteNote(${note.id})">Sil</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    // Mevcut admin panelini kaldır
+    const existingPanel = document.getElementById('adminPanel');
+    if (existingPanel) {
+        existingPanel.remove();
+    }
+
+    // Yeni paneli ekle
+    document.body.appendChild(adminSection);
+}
+
+// Admin not düzenleme
+async function adminEditNote(noteId) {
+    if (!isAdmin()) {
+        return;
+    }
+
+    const note = notes.find(n => n.id === noteId);
+    if (!note) {
+        alert('Not bulunamadı!');
+        return;
+    }
+
+    const textarea = document.getElementById(`note-${noteId}`);
+    const newContent = textarea.value.trim();
+
+    if (newContent.length === 0) {
+        alert('Not boş olamaz!');
+        return;
+    }
+
+    if (newContent.length > 280) {
+        alert('Not 280 karakterden uzun olamaz!');
+        return;
+    }
+
+    note.content = newContent;
+    saveToLocalStorage();
+    displayNotes();
+    showAdminPanel();
+    alert('Not başarıyla güncellendi!');
+}
+
+// Admin not silme
+async function adminDeleteNote(noteId) {
+    if (!isAdmin()) {
+        return;
+    }
+
+    const noteIndex = notes.findIndex(note => note.id === noteId);
+    if (noteIndex === -1) {
+        alert('Not bulunamadı!');
+        return;
+    }
+
+    if (confirm('Bu notu silmek istediğinizden emin misiniz?')) {
+        notes.splice(noteIndex, 1);
+        saveToLocalStorage();
+        displayNotes();
+        showAdminPanel();
+        alert('Not başarıyla silindi!');
+    }
+}
+
 // Solana cüzdan bağlantısı
 async function connectWallet() {
   try {
@@ -247,6 +349,11 @@ async function connectWallet() {
     updateShareFormVisibility();
     saveToLocalStorage();
     displayNotes();
+    
+    // Admin ise paneli göster
+    if (isAdmin()) {
+        showAdminPanel();
+    }
     
   } catch (err) {
     console.error("Cüzdan bağlantısında hata:", err);
@@ -635,4 +742,5 @@ shareNoteButton.addEventListener('click', async () => {
   displayNotes();
   showSection('home');
   alert('Not başarıyla paylaşıldı!');
-}); 
+});
+
