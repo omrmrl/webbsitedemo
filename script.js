@@ -69,9 +69,7 @@ const NOTE_COST = 0.01;
 
 // Public RPC endpoints
 const RPC_ENDPOINTS = [
-    'https://solana-mainnet.rpc.extrnode.com/f8b2e60d-f68f-4c77-ad50-153eac6e3d91',
-    'https://rpc.ankr.com/solana/0156c37b2acf46089b8f8a1e0b7e8b83c8a3f6c8',
-    'https://solana.getblock.io/mainnet/a2b1b3c4-d5e6-4f7g-8h9i-j0k1l2m3n4o5'
+    'https://warmhearted-distinguished-snow.solana-mainnet.quiknode.pro/344e865be650da6f4bd802b08c1ff6a1560fc868/'
 ];
 
 // Solana bağlantısını oluştur
@@ -87,11 +85,7 @@ async function createConnection() {
         const connectionConfig = {
             commitment: 'confirmed',
             confirmTransactionInitialTimeout: 60000,
-            disableRetryOnRateLimit: false,
-            httpHeaders: {
-                'Content-Type': 'application/json',
-                'Origin': window.location.origin
-            }
+            disableRetryOnRateLimit: false
         };
 
         connection = new solanaWeb3.Connection(endpoint, connectionConfig);
@@ -100,7 +94,7 @@ async function createConnection() {
         try {
             console.log('Bağlantı test ediliyor...');
             const slot = await connection.getSlot();
-            console.log('Bağlantı başarılı, slot:', slot);
+            console.log('Bağlantı başarılı, güncel slot:', slot);
             
             // Bağlantı başarılı olduktan sonra bakiye kontrolü yap
             if (walletAddress) {
@@ -120,15 +114,7 @@ async function createConnection() {
         }
     } catch (error) {
         console.error("RPC bağlantısı başarısız:", error);
-        
-        if (currentEndpointIndex < RPC_ENDPOINTS.length - 1) {
-            console.log('Alternatif endpoint deneniyor...');
-            currentEndpointIndex++;
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            return createConnection();
-        }
-        
-        throw new Error('Bağlantı başarısız. Lütfen internet bağlantınızı kontrol edin veya başka bir RPC endpoint deneyin.');
+        throw new Error('Bağlantı başarısız. Lütfen internet bağlantınızı kontrol edin.');
     }
 }
 
