@@ -69,9 +69,9 @@ const NOTE_COST = 0.01;
 
 // Public RPC endpoints
 const RPC_ENDPOINTS = [
-    'https://api.mainnet-beta.solana.com',
-    'https://solana-mainnet.rpc.extrnode.com',
-    'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff'
+    'https://solana-mainnet.rpc.extrnode.com/f8b2e60d-f68f-4c77-ad50-153eac6e3d91',
+    'https://rpc.ankr.com/solana/0156c37b2acf46089b8f8a1e0b7e8b83c8a3f6c8',
+    'https://solana.getblock.io/mainnet/a2b1b3c4-d5e6-4f7g-8h9i-j0k1l2m3n4o5'
 ];
 
 // Solana bağlantısını oluştur
@@ -87,7 +87,11 @@ async function createConnection() {
         const connectionConfig = {
             commitment: 'confirmed',
             confirmTransactionInitialTimeout: 60000,
-            disableRetryOnRateLimit: false
+            disableRetryOnRateLimit: false,
+            httpHeaders: {
+                'Content-Type': 'application/json',
+                'Origin': window.location.origin
+            }
         };
 
         connection = new solanaWeb3.Connection(endpoint, connectionConfig);
