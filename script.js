@@ -69,9 +69,9 @@ const NOTE_COST = 0.01;
 
 // Public RPC endpoints
 const RPC_ENDPOINTS = [
-    'https://solana-mainnet.g.alchemy.com/v2/demo',
-    'https://rpc.ankr.com/solana',
-    'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff'
+    'https://api.devnet.solana.com',
+    'https://solana-api.projectserum.com',
+    'https://solana.public-rpc.com'
 ];
 
 // Solana bağlantısını oluştur
@@ -86,13 +86,9 @@ async function createConnection() {
 
         const connectionConfig = {
             commitment: 'confirmed',
+            wsEndpoint: endpoint.replace('https://', 'wss://'),
             confirmTransactionInitialTimeout: 60000,
-            disableRetryOnRateLimit: false,
-            httpHeaders: {
-                'Content-Type': 'application/json',
-                'Origin': window.location.origin,
-                'Accept': '*/*'
-            }
+            disableRetryOnRateLimit: false
         };
 
         connection = new solanaWeb3.Connection(endpoint, connectionConfig);
@@ -100,8 +96,8 @@ async function createConnection() {
         // Test bağlantıyı
         try {
             console.log('Bağlantı test ediliyor...');
-            const version = await connection.getVersion();
-            console.log('Bağlantı başarılı, versiyon:', version);
+            const slot = await connection.getSlot();
+            console.log('Bağlantı başarılı, slot:', slot);
             
             // Bağlantı başarılı olduktan sonra bakiye kontrolü yap
             if (walletAddress) {
