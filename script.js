@@ -69,9 +69,9 @@ const NOTE_COST = 0.01;
 
 // Public RPC endpoints
 const RPC_ENDPOINTS = [
-    'https://api.mainnet-beta.solana.com',
-    'https://solana.public-rpc.com',
-    'https://free.rpcpool.com'
+    'https://solana-mainnet.g.alchemy.com/v2/demo',
+    'https://rpc.ankr.com/solana',
+    'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff'
 ];
 
 // Solana bağlantısını oluştur
@@ -90,7 +90,8 @@ async function createConnection() {
             disableRetryOnRateLimit: false,
             httpHeaders: {
                 'Content-Type': 'application/json',
-                'Origin': window.location.origin
+                'Origin': window.location.origin,
+                'Accept': '*/*'
             }
         };
 
