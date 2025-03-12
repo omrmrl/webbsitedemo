@@ -69,9 +69,9 @@ const NOTE_COST = 0.01;
 
 // Public RPC endpoints
 const RPC_ENDPOINTS = [
-    'https://api.devnet.solana.com',
-    'https://solana-api.projectserum.com',
-    'https://solana.public-rpc.com'
+    'https://api.mainnet-beta.solana.com',
+    'https://solana-mainnet.rpc.extrnode.com',
+    'https://mainnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff'
 ];
 
 // Solana bağlantısını oluştur
@@ -86,7 +86,6 @@ async function createConnection() {
 
         const connectionConfig = {
             commitment: 'confirmed',
-            wsEndpoint: endpoint.replace('https://', 'wss://'),
             confirmTransactionInitialTimeout: 60000,
             disableRetryOnRateLimit: false
         };
