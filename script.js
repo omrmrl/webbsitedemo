@@ -433,7 +433,7 @@ async function transferSOL(fromWallet, amount) {
         while (retryCount < maxRetries) {
             try {
                 console.log('Blockhash alınıyor...');
-                const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('finalized');
+                const { blockhash } = await connection.getLatestBlockhash('confirmed');
                 
                 const transaction = new solanaWeb3.Transaction().add(
                     solanaWeb3.SystemProgram.transfer({
@@ -444,7 +444,6 @@ async function transferSOL(fromWallet, amount) {
                 );
 
                 transaction.recentBlockhash = blockhash;
-                transaction.lastValidBlockHeight = lastValidBlockHeight;
                 transaction.feePayer = fromPubkey;
 
                 console.log('İşlem imzalanıyor...');
@@ -456,16 +455,12 @@ async function transferSOL(fromWallet, amount) {
                 console.log('İşlem gönderiliyor...');
                 const signature = await connection.sendRawTransaction(serializedTransaction, {
                     skipPreflight: false,
-                    maxRetries: 3,
-                    preflightCommitment: 'finalized'
+                    maxRetries: 5,
+                    preflightCommitment: 'confirmed'
                 });
                 
                 console.log('İşlem onayı bekleniyor...');
-                const confirmation = await connection.confirmTransaction({
-                    signature,
-                    blockhash,
-                    lastValidBlockHeight
-                }, 'finalized');
+                const confirmation = await connection.confirmTransaction(signature, 'confirmed');
                 
                 if (confirmation.value.err) {
                     throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
@@ -476,6 +471,12 @@ async function transferSOL(fromWallet, amount) {
 
             } catch (err) {
                 console.error(`İşlem hatası (${retryCount + 1}):`, err);
+                
+                if (err.message.includes('block height exceeded') || err.message.includes('blockhash not found')) {
+                    console.log('İşlem zaman aşımına uğradı, yeniden deneniyor...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    continue;
+                }
                 
                 if (err.message.includes('403') || err.message.includes('429')) {
                     console.log('RPC hatası, alternatif endpoint deneniyor...');
