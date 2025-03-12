@@ -67,11 +67,11 @@ const SOLANA_NETWORK = 'mainnet-beta';
 const RECEIVER_ADDRESS = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE';
 const NOTE_COST = 0.01;
 
-// CORS destekli mainnet RPC endpoints
+// Public RPC endpoints
 const RPC_ENDPOINTS = [
-    'https://solana-api.projectserum.com',
-    'https://rpc.ankr.com/solana',
-    'https://mainnet.rpcpool.com'
+    'https://api.mainnet-beta.solana.com',
+    'https://solana.public-rpc.com',
+    'https://free.rpcpool.com'
 ];
 
 // Solana bağlantısını oluştur
@@ -88,9 +88,9 @@ async function createConnection() {
             commitment: 'confirmed',
             confirmTransactionInitialTimeout: 60000,
             disableRetryOnRateLimit: false,
-            fetch: window.fetch.bind(window),
             httpHeaders: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Origin': window.location.origin
             }
         };
 
@@ -104,9 +104,13 @@ async function createConnection() {
             
             // Bağlantı başarılı olduktan sonra bakiye kontrolü yap
             if (walletAddress) {
-                const pubKey = new solanaWeb3.PublicKey(walletAddress);
-                const balance = await connection.getBalance(pubKey);
-                console.log('Güncel bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
+                try {
+                    const pubKey = new solanaWeb3.PublicKey(walletAddress);
+                    const balance = await connection.getBalance(pubKey);
+                    console.log('Güncel bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
+                } catch (balanceError) {
+                    console.error('Bakiye kontrolü hatası:', balanceError);
+                }
             }
             
             return true;
@@ -124,7 +128,7 @@ async function createConnection() {
             return createConnection();
         }
         
-        throw new Error('Bağlantı başarısız. Lütfen internet bağlantınızı kontrol edin.');
+        throw new Error('Bağlantı başarısız. Lütfen internet bağlantınızı kontrol edin veya başka bir RPC endpoint deneyin.');
     }
 }
 
@@ -144,7 +148,7 @@ async function initializeConnection() {
         } catch (error) {
             console.error(`Bağlantı denemesi ${retryCount + 1} başarısız:`, error);
             if (retryCount === maxRetries - 1) {
-                alert('Solana ağına bağlanılamıyor. Lütfen VPN kullanmayı deneyin veya daha sonra tekrar deneyin.');
+                alert('Solana ağına bağlanılamıyor. Lütfen daha sonra tekrar deneyin.');
                 return false;
             }
         }
