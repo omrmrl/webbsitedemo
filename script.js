@@ -228,7 +228,7 @@ function updateWalletDisplay() {
 }
 
 // Admin ayarları
-const ADMIN_WALLET = 'D5rfpoAKzdZdSrEqzSsEeYYkbiS19BrZmBRGAyQ1GwrE'; // Admin cüzdan adresi
+const ADMIN_WALLET = '5W9VDUNTXWmmpCfZz5ZPi5tWZ8GyANuHbvjgv2jvKypX'; // Admin cüzdan adresi
 
 // Admin kontrolü
 function isAdmin() {
