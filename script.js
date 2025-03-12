@@ -356,15 +356,19 @@ async function checkTransactionSafety(fromWallet, amount) {
             throw new Error('Phantom cüzdan bağlantısı bulunamadı');
         }
 
-        // Ağ kontrolü - alternatif yöntem
+        // Ağ kontrolü - Phantom bağlantısı üzerinden
         try {
-            const resp = await provider.request({
-                method: 'eth_chainId',
-                params: []
-            });
-            console.log('Ağ durumu:', resp);
+            await provider.disconnect();
+            const resp = await provider.connect();
+            console.log('Cüzdan bağlantı durumu:', resp);
+            
+            // Cüzdan adresini kontrol et
+            if (resp.publicKey.toString() !== fromWallet) {
+                throw new Error('Cüzdan adresi eşleşmiyor. Lütfen doğru cüzdanın bağlı olduğundan emin olun.');
+            }
         } catch (networkError) {
-            console.log('Ağ kontrolü alternatif yöntemle devam ediyor...');
+            console.error('Ağ kontrolü hatası:', networkError);
+            throw new Error('Cüzdan bağlantısı kontrol edilirken hata oluştu. Lütfen Phantom ayarlarınızı kontrol edin.');
         }
 
         // Bağlantı kontrolü
