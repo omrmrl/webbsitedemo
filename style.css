@@ -600,3 +600,113 @@ nav {
   font-size: 1.1em;
   font-style: italic;
 }
+
+/* Responsive Tasarım */
+@media screen and (max-width: 768px) {
+  /* Header düzenlemeleri */
+  header {
+    padding: 10px;
+    height: auto;
+    min-height: 60px;
+  }
+
+  nav {
+    flex-direction: column;
+    gap: 10px;
+    padding-left: 70px; /* Logo için alan bırak */
+  }
+
+  .nav-left {
+    margin: 0;
+    padding: 0;
+    gap: 15px;
+  }
+
+  .nav-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  /* Logo pozisyonu */
+  .logo-container {
+    left: 10px;
+    width: 50px;
+    height: 50px;
+  }
+
+  .logo {
+    width: 50px;
+    height: 50px;
+  }
+
+  /* Not grid düzeni */
+  .notes-grid {
+    grid-template-columns: repeat(1, 1fr);
+    padding: 10px;
+    gap: 10px;
+  }
+
+  /* Container padding */
+  .container {
+    padding: 10px;
+    margin: 10px;
+  }
+
+  /* Not kutuları */
+  .note {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  /* About bölümü */
+  .about-content {
+    padding: 20px;
+  }
+
+  .about-section, .features-section, .tokenomics-section, .future-plans-section, .join-section {
+    padding: 15px;
+  }
+
+  .about-section h2 {
+    font-size: 1.8em;
+  }
+
+  .about-section h3 {
+    font-size: 1.2em;
+  }
+
+  /* Not paylaşma formu */
+  #noteInput {
+    max-width: 100%;
+  }
+}
+
+/* Daha küçük ekranlar için ek düzenlemeler */
+@media screen and (max-width: 480px) {
+  nav {
+    padding-left: 60px;
+  }
+
+  .nav-left {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .nav-left li {
+    margin-right: 10px;
+  }
+
+  .wallet-button {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+
+  .about-section h2 {
+    font-size: 1.5em;
+  }
+
+  .features-list li {
+    padding: 10px;
+    font-size: 1em;
+  }
+}
