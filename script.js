@@ -655,6 +655,7 @@ function displayNotes() {
       
       const isVoted = votedNotes.has(note.id);
       const buttonsDisabled = !walletAddress || isVoted;
+      const isAdminUser = isAdmin();
       
       noteElement.innerHTML = `
         <p>${note.content}</p>
@@ -666,9 +667,9 @@ function displayNotes() {
             👎 Beğenme (${note.dislikes})
           </button>
         </div>
-        <div class="wallet-address-display ${isAdmin() ? 'admin' : ''}">
+        <div class="wallet-address-display ${isAdminUser ? 'admin' : ''}">
           <span class="short-address">${shortenAddress(note.walletAddress || '')}</span>
-          <span class="full-address">${note.walletAddress || ''}</span>
+          ${isAdminUser ? `<span class="full-address">${note.walletAddress || ''}</span>` : ''}
         </div>
       `;
       
@@ -676,6 +677,11 @@ function displayNotes() {
     });
     
     loadMoreBtn.style.display = notes.length > notesPerPage && endIndex < notes.length ? 'block' : 'none';
+
+    // Admin panelini göster
+    if (isAdmin()) {
+      showAdminPanel();
+    }
   } catch (error) {
     console.error("Notlar gösterilirken hata:", error);
   }
