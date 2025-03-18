@@ -708,6 +708,12 @@ function vote(noteId, voteType) {
   }
 }
 
+// Cüzdan adresini kısaltma fonksiyonu
+function shortenAddress(address) {
+    if (!address) return '';
+    return address.slice(0, 4) + '...' + address.slice(-4);
+}
+
 // Event Listener'ları
 document.addEventListener('DOMContentLoaded', () => {
   try {
@@ -791,84 +797,4 @@ shareNoteButton.addEventListener('click', async () => {
   displayNotes();
   showSection('home');
   alert('Not başarıyla paylaşıldı!');
-});
-
-// Cüzdan adresini kısaltma fonksiyonu
-function shortenAddress(address) {
-    if (!address) return '';
-    return address.slice(0, 4) + '...' + address.slice(-4);
-}
-
-// Not oluşturma fonksiyonu
-function createNoteElement(note) {
-    const template = document.getElementById('noteTemplate');
-    const noteElement = template.content.cloneNode(true);
-    
-    noteElement.querySelector('p').textContent = note.text;
-    
-    // Cüzdan adresini ekle
-    const walletDisplay = noteElement.querySelector('.wallet-address-display');
-    const shortAddress = noteElement.querySelector('.short-address');
-    const fullAddress = noteElement.querySelector('.full-address');
-    
-    shortAddress.textContent = shortenAddress(note.walletAddress);
-    fullAddress.textContent = note.walletAddress;
-    
-    // Admin kontrolü
-    if (isAdmin) {
-        walletDisplay.classList.add('admin');
-    }
-    
-    // Like/Dislike butonları için event listener'lar
-    const likeButton = noteElement.querySelector('.like');
-    const dislikeButton = noteElement.querySelector('.dislike');
-    
-    likeButton.addEventListener('click', () => handleLike(note.id));
-    dislikeButton.addEventListener('click', () => handleDislike(note.id));
-    
-    return noteElement;
-}
-
-// Admin kontrolü için global değişken
-let isAdmin = false;
-
-// Admin durumunu kontrol et
-function checkAdminStatus() {
-    // Burada admin kontrolü yapılacak
-    // Örnek: Belirli bir cüzdan adresi admin olabilir
-    const adminAddresses = ['ADMIN_CUZDAN_ADRESI']; // Admin cüzdan adreslerini buraya ekleyin
-    isAdmin = adminAddresses.includes(currentWalletAddress);
-}
-
-// Cüzdan bağlandığında admin kontrolü yap
-async function connectWallet() {
-    // Mevcut cüzdan bağlantı kodları...
-    
-    // Cüzdan bağlandıktan sonra admin kontrolü yap
-    checkAdminStatus();
-    
-    // Notları yeniden yükle
-    loadNotes();
-}
-
-// Notları yükleme fonksiyonu
-async function loadNotes() {
-    const notesGrid = document.querySelector('.notes-grid');
-    notesGrid.innerHTML = '';
-    
-    try {
-        const notes = await getNotes(); // Bu fonksiyon notları API'den alacak
-        notes.forEach(note => {
-            const noteElement = createNoteElement(note);
-            notesGrid.appendChild(noteElement);
-        });
-    } catch (error) {
-        console.error('Notlar yüklenirken hata oluştu:', error);
-    }
-}
-
-// Sayfa yüklendiğinde
-document.addEventListener('DOMContentLoaded', () => {
-    checkAdminStatus();
-    loadNotes();
 });
