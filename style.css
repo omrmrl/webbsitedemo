@@ -218,20 +218,36 @@ nav {
 
 /* Like & Dislike Butonları */
 .note-buttons {
-  margin-top: auto;
   display: flex;
   justify-content: space-between;
+  gap: 5px;
+  margin-top: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .note-buttons button {
+  flex: 1;
   padding: 5px 10px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s ease;
+  background-color: #f0f0f0;
+  color: #333;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-buttons button:hover {
+  background-color: #e0e0e0;
 }
 
 .note-buttons button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
