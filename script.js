@@ -720,30 +720,55 @@ function shortenAddress(address) {
     return address.slice(0, 4) + '...' + address.slice(-4);
 }
 
-// Event Listener'ları
+// Uyarı mesajlarını güncelle
+function updateWarningMessages() {
+    const connectWarning = document.getElementById('connect-warning');
+    const balanceWarning = document.getElementById('balance-warning');
+    const networkWarning = document.getElementById('network-warning');
+    const transactionWarning = document.getElementById('transaction-warning');
+    const errorWarning = document.getElementById('error-warning');
+
+    if (connectWarning) connectWarning.textContent = 'Please connect your Phantom wallet to continue.';
+    if (balanceWarning) balanceWarning.textContent = 'Insufficient balance. Please add funds to your wallet.';
+    if (networkWarning) networkWarning.textContent = 'Please switch to Solana Devnet network.';
+    if (transactionWarning) transactionWarning.textContent = 'Transaction failed. Please try again.';
+    if (errorWarning) errorWarning.textContent = 'An error occurred. Please try again later.';
+}
+
+// Footer telif hakkı metnini güncelle
+function updateFooter() {
+    const footer = document.querySelector('footer');
+    if (footer) {
+        footer.innerHTML = '<p>&copy; 2024 NoteChain. All rights reserved.</p>';
+    }
+}
+
+// Sayfa yüklendiğinde uyarıları ve footer'ı güncelle
 document.addEventListener('DOMContentLoaded', () => {
-  try {
-    console.log('Sayfa yüklendi, başlangıç işlemleri yapılıyor...');
-    
-    // LocalStorage'dan verileri yükle
-    loadFromLocalStorage();
-    
-    // Cüzdan görünümünü güncelle
-    updateWalletDisplay();
-    
-    // Form görünürlüğünü güncelle
-    updateShareFormVisibility();
-    
-    // Ana sayfayı göster
-    showSection('home');
-    
-    // Notları göster
-    displayNotes();
-    
-    console.log('Başlangıç işlemleri tamamlandı');
-  } catch (error) {
-    console.error("Sayfa yüklenirken hata:", error);
-  }
+    updateWarningMessages();
+    updateFooter();
+    try {
+      console.log('Sayfa yüklendi, başlangıç işlemleri yapılıyor...');
+      
+      // LocalStorage'dan verileri yükle
+      loadFromLocalStorage();
+      
+      // Cüzdan görünümünü güncelle
+      updateWalletDisplay();
+      
+      // Form görünürlüğünü güncelle
+      updateShareFormVisibility();
+      
+      // Ana sayfayı göster
+      showSection('home');
+      
+      // Notları göster
+      displayNotes();
+      
+      console.log('Başlangıç işlemleri tamamlandı');
+    } catch (error) {
+      console.error("Sayfa yüklenirken hata:", error);
+    }
 });
 
 // Cüzdan dropdown menüsünü aç/kapa
