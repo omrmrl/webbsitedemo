@@ -1,16 +1,16 @@
 // Buffer ve Web3.js kontrolü
 if (typeof window !== 'undefined' && !window.Buffer) {
-    console.error('Buffer tanımlı değil!');
+  console.error('Buffer is not defined!');
 }
 
 if (typeof solanaWeb3 === 'undefined') {
-    console.error('Solana Web3 yüklenemedi!');
+  console.error('Solana Web3 could not be loaded!');
 }
 
 // Test için konsol logları
-console.log('Script başlatılıyor...');
-console.log('Buffer kontrolü:', typeof window.Buffer);
-console.log('Web3 kontrolü:', typeof solanaWeb3);
+console.log('Script initializing...');
+console.log('Buffer check:', typeof window.Buffer);
+console.log('Web3 check:', typeof solanaWeb3);
 
 // HTML elemanlarını seç
 const connectWalletButton = document.getElementById('connectWallet');
@@ -25,36 +25,36 @@ const walletDropdown = document.querySelector('.wallet-dropdown');
 const disconnectWalletButton = document.getElementById('disconnectWallet');
 
 // Test için element kontrolü
-console.log('HTML elementleri yüklendi:', {
-    connectWalletButton: !!connectWalletButton,
-    walletAddressDiv: !!walletAddressDiv,
-    noteInput: !!noteInput,
-    shareNoteButton: !!shareNoteButton,
-    notesList: !!notesList
+console.log('HTML elements loaded:', {
+  connectWalletButton: !!connectWalletButton,
+  walletAddressDiv: !!walletAddressDiv,
+  noteInput: !!noteInput,
+  shareNoteButton: !!shareNoteButton,
+  notesList: !!notesList
 });
 
 // Notları saklamak için dizi ve cüzdan durumu
 let notes = [
-  { id: 1, content: "This is a small note.", likes: 5, dislikes: 2, size: "small" },
-  { id: 2, content: "This is a longer note with more content.", likes: 10, dislikes: 0, size: "tall" },
-  { id: 3, content: "Great to step into blockchain world with Solana!", likes: 3, dislikes: 1, size: "medium" },
-  { id: 4, content: "Nice platform to share short notes.", likes: 7, dislikes: 2, size: "tall" },
-  { id: 5, content: "Web3 technologies are evolving every day.", likes: 15, dislikes: 1, size: "medium" },
-  { id: 6, content: "Blockchain-based applications will shape the future.", likes: 12, dislikes: 3, size: "tall" },
-  { id: 7, content: "Decentralized systems are gaining importance.", likes: 8, dislikes: 1, size: "small" },
-  { id: 8, content: "Crypto world is constantly renewing.", likes: 6, dislikes: 2, size: "medium" },
-  { id: 9, content: "DeFi projects are transforming finance.", likes: 20, dislikes: 4, size: "tall" },
-  { id: 10, content: "NFTs are democratizing digital art.", likes: 14, dislikes: 3, size: "medium" },
-  { id: 11, content: "Metaverse concept is entering our lives.", likes: 11, dislikes: 2, size: "small" },
-  { id: 12, content: "DAOs could be the new governance model.", likes: 9, dislikes: 1, size: "tall" },
-  { id: 13, content: "Smart contracts automate business processes.", likes: 16, dislikes: 2, size: "medium" },
-  { id: 14, content: "Digital identity solutions are gaining importance.", likes: 13, dislikes: 3, size: "small" },
-  { id: 15, content: "Layer 2 solutions increase scalability.", likes: 18, dislikes: 1, size: "tall" },
-  { id: 16, content: "Privacy-focused blockchain projects are developing.", likes: 7, dislikes: 2, size: "medium" },
-  { id: 17, content: "Cross-chain bridges unite the ecosystem.", likes: 4, dislikes: 1, size: "small" },
-  { id: 18, content: "Tokenization spreads to every field.", likes: 8, dislikes: 3, size: "tall" },
-  { id: 19, content: "Sustainable blockchain solutions stand out.", likes: 12, dislikes: 2, size: "medium" },
-  { id: 20, content: "Web3 gaming sector is growing.", likes: 15, dislikes: 4, size: "small" }
+{ id: 1, content: "This is a small note.", likes: 5, dislikes: 2, size: "small" },
+{ id: 2, content: "This is a longer note with more content.", likes: 10, dislikes: 0, size: "tall" },
+{ id: 3, content: "Great to step into blockchain world with Solana!", likes: 3, dislikes: 1, size: "medium" },
+{ id: 4, content: "Nice platform to share short notes.", likes: 7, dislikes: 2, size: "tall" },
+{ id: 5, content: "Web3 technologies are evolving every day.", likes: 15, dislikes: 1, size: "medium" },
+{ id: 6, content: "Blockchain-based applications will shape the future.", likes: 12, dislikes: 3, size: "tall" },
+{ id: 7, content: "Decentralized systems are gaining importance.", likes: 8, dislikes: 1, size: "small" },
+{ id: 8, content: "Crypto world is constantly renewing.", likes: 6, dislikes: 2, size: "medium" },
+{ id: 9, content: "DeFi projects are transforming finance.", likes: 20, dislikes: 4, size: "tall" },
+{ id: 10, content: "NFTs are democratizing digital art.", likes: 14, dislikes: 3, size: "medium" },
+{ id: 11, content: "Metaverse concept is entering our lives.", likes: 11, dislikes: 2, size: "small" },
+{ id: 12, content: "DAOs could be the new governance model.", likes: 9, dislikes: 1, size: "tall" },
+{ id: 13, content: "Smart contracts automate business processes.", likes: 16, dislikes: 2, size: "medium" },
+{ id: 14, content: "Digital identity solutions are gaining importance.", likes: 13, dislikes: 3, size: "small" },
+{ id: 15, content: "Layer 2 solutions increase scalability.", likes: 18, dislikes: 1, size: "tall" },
+{ id: 16, content: "Privacy-focused blockchain projects are developing.", likes: 7, dislikes: 2, size: "medium" },
+{ id: 17, content: "Cross-chain bridges unite the ecosystem.", likes: 4, dislikes: 1, size: "small" },
+{ id: 18, content: "Tokenization spreads to every field.", likes: 8, dislikes: 3, size: "tall" },
+{ id: 19, content: "Sustainable blockchain solutions stand out.", likes: 12, dislikes: 2, size: "medium" },
+{ id: 20, content: "Web3 gaming sector is growing.", likes: 15, dislikes: 4, size: "small" }
 ];
 
 let walletAddress = null;
@@ -69,7 +69,7 @@ const NOTE_COST = 0.01;
 
 // Public RPC endpoints
 const RPC_ENDPOINTS = [
-    'https://warmhearted-distinguished-snow.solana-mainnet.quiknode.pro/344e865be650da6f4bd802b08c1ff6a1560fc868/'
+  'https://warmhearted-distinguished-snow.solana-mainnet.quiknode.pro/344e865be650da6f4bd802b08c1ff6a1560fc868/'
 ];
 
 // Solana bağlantısını oluştur
@@ -77,72 +77,72 @@ let connection;
 let currentEndpointIndex = 0;
 
 async function createConnection() {
-    try {
-        console.log('RPC bağlantısı oluşturuluyor...');
-        const endpoint = RPC_ENDPOINTS[currentEndpointIndex];
-        console.log('Seçilen endpoint:', endpoint);
+  try {
+      console.log('Creating RPC connection...');
+      const endpoint = RPC_ENDPOINTS[currentEndpointIndex];
+      console.log('Selected endpoint:', endpoint);
 
-        const connectionConfig = {
-            commitment: 'confirmed',
-            confirmTransactionInitialTimeout: 60000,
-            disableRetryOnRateLimit: false
-        };
+      const connectionConfig = {
+          commitment: 'confirmed',
+          confirmTransactionInitialTimeout: 60000,
+          disableRetryOnRateLimit: false
+      };
 
-        connection = new solanaWeb3.Connection(endpoint, connectionConfig);
-        
-        // Test bağlantıyı
-        try {
-            console.log('Bağlantı test ediliyor...');
-            const slot = await connection.getSlot();
-            console.log('Bağlantı başarılı, güncel slot:', slot);
-            
-            // Bağlantı başarılı olduktan sonra bakiye kontrolü yap
-            if (walletAddress) {
-                try {
-                    const pubKey = new solanaWeb3.PublicKey(walletAddress);
-                    const balance = await connection.getBalance(pubKey);
-                    console.log('Güncel bakiye:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
-                } catch (balanceError) {
-                    console.error('Bakiye kontrolü hatası:', balanceError);
-                }
-            }
-            
-            return true;
-        } catch (testError) {
-            console.error('Bağlantı testi başarısız:', testError);
-            throw testError;
-        }
-    } catch (error) {
-        console.error("RPC bağlantısı başarısız:", error);
-        throw new Error('Bağlantı başarısız. Lütfen internet bağlantınızı kontrol edin.');
-    }
+      connection = new solanaWeb3.Connection(endpoint, connectionConfig);
+      
+      // Test connection
+      try {
+          console.log('Testing connection...');
+          const slot = await connection.getSlot();
+          console.log('Connection successful, current slot:', slot);
+          
+          // Check balance after successful connection
+          if (walletAddress) {
+              try {
+                  const pubKey = new solanaWeb3.PublicKey(walletAddress);
+                  const balance = await connection.getBalance(pubKey);
+                  console.log('Current balance:', balance / solanaWeb3.LAMPORTS_PER_SOL, 'SOL');
+              } catch (balanceError) {
+                  console.error('Balance check error:', balanceError);
+              }
+          }
+          
+          return true;
+      } catch (testError) {
+          console.error('Connection test failed:', testError);
+          throw testError;
+      }
+  } catch (error) {
+      console.error("RPC connection failed:", error);
+      throw new Error('Connection failed. Please check your internet connection.');
+  }
 }
 
 // İlk bağlantıyı oluştur ve 3 kez deneme yap
 async function initializeConnection() {
-    let retryCount = 0;
-    const maxRetries = 3;
+  let retryCount = 0;
+  const maxRetries = 3;
 
-    while (retryCount < maxRetries) {
-        try {
-            console.log(`Bağlantı denemesi ${retryCount + 1}/${maxRetries}`);
-            const connected = await createConnection();
-            if (connected) {
-                console.log('Bağlantı başarıyla kuruldu');
-                return true;
-            }
-        } catch (error) {
-            console.error(`Bağlantı denemesi ${retryCount + 1} başarısız:`, error);
-            if (retryCount === maxRetries - 1) {
-                alert('Solana ağına bağlanılamıyor. Lütfen daha sonra tekrar deneyin.');
-                return false;
-            }
-        }
-        retryCount++;
-        await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-    
-    return false;
+  while (retryCount < maxRetries) {
+      try {
+          console.log(`Connection attempt ${retryCount + 1}/${maxRetries}`);
+          const connected = await createConnection();
+          if (connected) {
+              console.log('Connection established successfully');
+              return true;
+          }
+      } catch (error) {
+          console.error(`Connection attempt ${retryCount + 1} failed:`, error);
+          if (retryCount === maxRetries - 1) {
+              alert('Cannot connect to Solana network. Please try again later.');
+              return false;
+          }
+      }
+      retryCount++;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  
+  return false;
 }
 
 // Bağlantıyı başlat
@@ -171,7 +171,7 @@ function loadFromLocalStorage() {
       updateWalletDisplay();
     }
   } catch (error) {
-    console.error("LocalStorage'dan veri yüklenirken hata:", error);
+    console.error("Error loading data from LocalStorage:", error);
   }
 }
 
@@ -186,7 +186,7 @@ function saveToLocalStorage() {
       localStorage.removeItem('walletAddress');
     }
   } catch (error) {
-    console.error("LocalStorage'a veri kaydedilirken hata:", error);
+    console.error("Error saving data to LocalStorage:", error);
   }
 }
 
@@ -201,11 +201,11 @@ const getProvider = () => {
       }
     }
     // Phantom yüklü değilse uyarı göster
-    alert('Lütfen Phantom cüzdan eklentisini yükleyin!');
+    alert('Please install the Phantom wallet extension!');
     window.open('https://phantom.app/', '_blank');
     return null;
   } catch (error) {
-    console.error("Phantom provider kontrolünde hata:", error);
+    console.error("Error checking Phantom provider:", error);
     return null;
   }
 };
@@ -223,7 +223,7 @@ function updateWalletDisplay() {
       walletAddressDiv.textContent = '';
     }
   } catch (error) {
-    console.error("Cüzdan görünümü güncellenirken hata:", error);
+    console.error("Error updating wallet display:", error);
   }
 }
 
@@ -232,109 +232,109 @@ const ADMIN_WALLET = '5W9VDUNTXWmmpCfZz5ZPi5tWZ8GyANuHbvjgv2jvKypX'; // Admin c�
 
 // Admin kontrolü
 function isAdmin() {
-    console.log('Admin kontrolü yapılıyor...');
-    console.log('Bağlı cüzdan:', walletAddress);
-    console.log('Admin cüzdan:', ADMIN_WALLET);
-    return walletAddress === ADMIN_WALLET;
+  console.log('Checking admin status...');
+  console.log('Connected wallet:', walletAddress);
+  console.log('Admin wallet:', ADMIN_WALLET);
+  return walletAddress === ADMIN_WALLET;
 }
 
 // Admin paneli gösterme
 function showAdminPanel() {
-    console.log('Admin paneli gösterme fonksiyonu çağrıldı');
-    if (!isAdmin()) {
-        console.log('Admin değil, panel gösterilmiyor');
-        return;
-    }
+  console.log('Show admin panel function called');
+  if (!isAdmin()) {
+      console.log('Not admin, panel not shown');
+      return;
+  }
 
-    console.log('Admin doğrulandı, panel hazırlanıyor');
-    
-    // Mevcut paneli kaldır
-    const existingPanel = document.getElementById('adminPanel');
-    if (existingPanel) {
-        existingPanel.remove();
-    }
+  console.log('Admin verified, preparing panel');
+  
+  // Mevcut paneli kaldır
+  const existingPanel = document.getElementById('adminPanel');
+  if (existingPanel) {
+      existingPanel.remove();
+  }
 
-    const adminSection = document.createElement('div');
-    adminSection.id = 'adminPanel';
-    adminSection.className = 'admin-panel';
-    adminSection.innerHTML = `
-        <h2>Admin Paneli</h2>
-        <div class="admin-stats">
-            <p>Toplam Not: ${notes.length}</p>
-            <p>Toplam Beğeni: ${notes.reduce((sum, note) => sum + note.likes, 0)}</p>
-            <p>Toplam Beğenmeme: ${notes.reduce((sum, note) => sum + note.dislikes, 0)}</p>
-        </div>
-        <div class="admin-notes">
-            <h3>Tüm Notlar</h3>
-            ${notes.map(note => `
-                <div class="admin-note">
-                    <p>ID: ${note.id}</p>
-                    <textarea id="note-${note.id}">${note.content}</textarea>
-                    <div class="admin-buttons">
-                        <button onclick="adminEditNote(${note.id})">Düzenle</button>
-                        <button onclick="adminDeleteNote(${note.id})">Sil</button>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
+  const adminSection = document.createElement('div');
+  adminSection.id = 'adminPanel';
+  adminSection.className = 'admin-panel';
+  adminSection.innerHTML = `
+      <h2>Admin Paneli</h2>
+      <div class="admin-stats">
+          <p>Toplam Not: ${notes.length}</p>
+          <p>Toplam Beğeni: ${notes.reduce((sum, note) => sum + note.likes, 0)}</p>
+          <p>Toplam Beğenmeme: ${notes.reduce((sum, note) => sum + note.dislikes, 0)}</p>
+      </div>
+      <div class="admin-notes">
+          <h3>Tüm Notlar</h3>
+          ${notes.map(note => `
+              <div class="admin-note">
+                  <p>ID: ${note.id}</p>
+                  <textarea id="note-${note.id}">${note.content}</textarea>
+                  <div class="admin-buttons">
+                      <button onclick="adminEditNote(${note.id})">Düzenle</button>
+                      <button onclick="adminDeleteNote(${note.id})">Sil</button>
+                  </div>
+              </div>
+          `).join('')}
+      </div>
+  `;
 
-    // Paneli sayfaya ekle
-    document.body.appendChild(adminSection);
-    console.log('Admin paneli başarıyla eklendi');
+  // Paneli sayfaya ekle
+  document.body.appendChild(adminSection);
+  console.log('Admin paneli başarıyla eklendi');
 }
 
 // Admin not düzenleme
 async function adminEditNote(noteId) {
-    if (!isAdmin()) {
-        return;
-    }
+  if (!isAdmin()) {
+      return;
+  }
 
-    const note = notes.find(n => n.id === noteId);
-    if (!note) {
-        alert('Not bulunamadı!');
-        return;
-    }
+  const note = notes.find(n => n.id === noteId);
+  if (!note) {
+      alert('Not bulunamadı!');
+      return;
+  }
 
-    const textarea = document.getElementById(`note-${noteId}`);
-    const newContent = textarea.value.trim();
+  const textarea = document.getElementById(`note-${noteId}`);
+  const newContent = textarea.value.trim();
 
-    if (newContent.length === 0) {
-        alert('Not boş olamaz!');
-        return;
-    }
+  if (newContent.length === 0) {
+      alert('Not boş olamaz!');
+      return;
+  }
 
-    if (newContent.length > 280) {
-        alert('Not 280 karakterden uzun olamaz!');
-        return;
-    }
+  if (newContent.length > 280) {
+      alert('Not 280 karakterden uzun olamaz!');
+      return;
+  }
 
-    note.content = newContent;
-    saveToLocalStorage();
-    displayNotes();
-    showAdminPanel();
-    alert('Not başarıyla güncellendi!');
+  note.content = newContent;
+  saveToLocalStorage();
+  displayNotes();
+  showAdminPanel();
+  alert('Not başarıyla güncellendi!');
 }
 
 // Admin not silme
 async function adminDeleteNote(noteId) {
-    if (!isAdmin()) {
-        return;
-    }
+  if (!isAdmin()) {
+      return;
+  }
 
-    const noteIndex = notes.findIndex(note => note.id === noteId);
-    if (noteIndex === -1) {
-        alert('Not bulunamadı!');
-        return;
-    }
+  const noteIndex = notes.findIndex(note => note.id === noteId);
+  if (noteIndex === -1) {
+      alert('Not bulunamadı!');
+      return;
+  }
 
-    if (confirm('Bu notu silmek istediğinizden emin misiniz?')) {
-        notes.splice(noteIndex, 1);
-        saveToLocalStorage();
-        displayNotes();
-        showAdminPanel();
-        alert('Not başarıyla silindi!');
-    }
+  if (confirm('Bu notu silmek istediğinizden emin misiniz?')) {
+      notes.splice(noteIndex, 1);
+      saveToLocalStorage();
+      displayNotes();
+      showAdminPanel();
+      alert('Not başarıyla silindi!');
+  }
 }
 
 // Solana cüzdan bağlantısı
@@ -453,170 +453,170 @@ function loadMore() {
 
 // Transfer işlemi için güvenlik kontrolleri
 async function checkTransactionSafety(fromWallet, amount) {
-    try {
-        console.log('Güvenlik kontrolü başlatılıyor...');
-        
-        // Phantom cüzdan kontrolü
-        const provider = getProvider();
-        if (!provider) {
-            throw new Error('Phantom cüzdan bağlantısı bulunamadı');
-        }
+  try {
+      console.log('Güvenlik kontrolü başlatılıyor...');
+      
+      // Phantom cüzdan kontrolü
+      const provider = getProvider();
+      if (!provider) {
+          throw new Error('Phantom cüzdan bağlantısı bulunamadı');
+      }
 
-        // Ağ kontrolü - Phantom bağlantısı üzerinden
-        try {
-            await provider.disconnect();
-            const resp = await provider.connect();
-            console.log('Cüzdan bağlantı durumu:', resp);
-            
-            // Cüzdan adresini kontrol et
-            if (resp.publicKey.toString() !== fromWallet) {
-                throw new Error('Cüzdan adresi eşleşmiyor. Lütfen doğru cüzdanın bağlı olduğundan emin olun.');
-            }
-        } catch (networkError) {
-            console.error('Ağ kontrolü hatası:', networkError);
-            throw new Error('Cüzdan bağlantısı kontrol edilirken hata oluştu. Lütfen Phantom ayarlarınızı kontrol edin.');
-        }
+      // Ağ kontrolü - Phantom bağlantısı üzerinden
+      try {
+          await provider.disconnect();
+          const resp = await provider.connect();
+          console.log('Cüzdan bağlantı durumu:', resp);
+          
+          // Cüzdan adresini kontrol et
+          if (resp.publicKey.toString() !== fromWallet) {
+              throw new Error('Cüzdan adresi eşleşmiyor. Lütfen doğru cüzdanın bağlı olduğundan emin olun.');
+          }
+      } catch (networkError) {
+          console.error('Ağ kontrolü hatası:', networkError);
+          throw new Error('Cüzdan bağlantısı kontrol edilirken hata oluştu. Lütfen Phantom ayarlarınızı kontrol edin.');
+      }
 
-        // Bağlantı kontrolü
-        if (!connection) {
-            console.log('Bağlantı yok, yeni bağlantı oluşturuluyor...');
-            await createConnection();
-        }
+      // Bağlantı kontrolü
+      if (!connection) {
+          console.log('Bağlantı yok, yeni bağlantı oluşturuluyor...');
+          await createConnection();
+      }
 
-        // Bakiye kontrolü
-        console.log('Bakiye kontrolü yapılıyor...');
-        const pubKey = new solanaWeb3.PublicKey(fromWallet);
-        
-        // Bakiyeyi sorgula
-        const balance = await connection.getBalance(pubKey, 'confirmed');
-        const balanceInSol = balance / solanaWeb3.LAMPORTS_PER_SOL;
-        console.log('Mevcut bakiye:', balanceInSol, 'SOL');
+      // Bakiye kontrolü
+      console.log('Bakiye kontrolü yapılıyor...');
+      const pubKey = new solanaWeb3.PublicKey(fromWallet);
+      
+      // Bakiyeyi sorgula
+      const balance = await connection.getBalance(pubKey, 'confirmed');
+      const balanceInSol = balance / solanaWeb3.LAMPORTS_PER_SOL;
+      console.log('Mevcut bakiye:', balanceInSol, 'SOL');
 
-        // Minimum bakiye kontrolü
-        const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
-        if (balance < minBalance) {
-            const requiredMore = (minBalance - balance) / solanaWeb3.LAMPORTS_PER_SOL;
-            throw new Error(`Yetersiz bakiye! İşlem için ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${balanceInSol.toFixed(4)} SOL. ${requiredMore.toFixed(4)} SOL daha gerekli.`);
-        }
+      // Minimum bakiye kontrolü
+      const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
+      if (balance < minBalance) {
+          const requiredMore = (minBalance - balance) / solanaWeb3.LAMPORTS_PER_SOL;
+          throw new Error(`Yetersiz bakiye! İşlem için ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${balanceInSol.toFixed(4)} SOL. ${requiredMore.toFixed(4)} SOL daha gerekli.`);
+      }
 
-        console.log('Bakiye yeterli, işlem devam edebilir');
-        return true;
+      console.log('Bakiye yeterli, işlem devam edebilir');
+      return true;
 
-    } catch (error) {
-        console.error("Güvenlik kontrolü sırasında hata:", error);
-        alert(error.message);
-        return false;
-    }
+  } catch (error) {
+      console.error("Güvenlik kontrolü sırasında hata:", error);
+      alert(error.message);
+      return false;
+  }
 }
 
 // SOL transfer işlemi
 async function transferSOL(fromWallet, amount) {
-    try {
-        console.log('Transfer başlatılıyor...', { fromWallet, amount });
-        
-        const provider = getProvider();
-        if (!provider) {
-            throw new Error('Phantom cüzdan bağlantısı bulunamadı');
-        }
+  try {
+      console.log('Transfer başlatılıyor...', { fromWallet, amount });
+      
+      const provider = getProvider();
+      if (!provider) {
+          throw new Error('Phantom cüzdan bağlantısı bulunamadı');
+      }
 
-        // Basit bağlantı kontrolü
-        try {
-            await provider.request({ method: "connect" });
-        } catch (connError) {
-            console.error('Cüzdan bağlantı hatası:', connError);
-            throw new Error('Cüzdan bağlantısı kurulamadı. Lütfen Phantom cüzdanınızın bağlı olduğundan emin olun.');
-        }
+      // Basit bağlantı kontrolü
+      try {
+          await provider.request({ method: "connect" });
+      } catch (connError) {
+          console.error('Cüzdan bağlantı hatası:', connError);
+          throw new Error('Cüzdan bağlantısı kurulamadı. Lütfen Phantom cüzdanınızın bağlı olduğundan emin olun.');
+      }
 
-        if (!connection) {
-            const connected = await createConnection();
-            if (!connected) {
-                throw new Error('Ağ bağlantısı kurulamadı');
-            }
-        }
+      if (!connection) {
+          const connected = await createConnection();
+          if (!connected) {
+              throw new Error('Ağ bağlantısı kurulamadı');
+          }
+      }
 
-        const isSafe = await checkTransactionSafety(fromWallet, amount);
-        if (!isSafe) {
-            return false;
-        }
+      const isSafe = await checkTransactionSafety(fromWallet, amount);
+      if (!isSafe) {
+          return false;
+      }
 
-        console.log('İşlem hazırlanıyor...');
-        const fromPubkey = new solanaWeb3.PublicKey(fromWallet);
-        const toPubkey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
-        const lamports = Math.floor(amount * solanaWeb3.LAMPORTS_PER_SOL);
+      console.log('İşlem hazırlanıyor...');
+      const fromPubkey = new solanaWeb3.PublicKey(fromWallet);
+      const toPubkey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
+      const lamports = Math.floor(amount * solanaWeb3.LAMPORTS_PER_SOL);
 
-        let retryCount = 0;
-        const maxRetries = 3;
-        
-        while (retryCount < maxRetries) {
-            try {
-                console.log('Blockhash alınıyor...');
-                const { blockhash } = await connection.getLatestBlockhash('confirmed');
-                
-                const transaction = new solanaWeb3.Transaction().add(
-                    solanaWeb3.SystemProgram.transfer({
-                        fromPubkey,
-                        toPubkey,
-                        lamports
-                    })
-                );
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+          try {
+              console.log('Blockhash alınıyor...');
+              const { blockhash } = await connection.getLatestBlockhash('confirmed');
+              
+              const transaction = new solanaWeb3.Transaction().add(
+                  solanaWeb3.SystemProgram.transfer({
+                      fromPubkey,
+                      toPubkey,
+                      lamports
+                  })
+              );
 
-                transaction.recentBlockhash = blockhash;
-                transaction.feePayer = fromPubkey;
+              transaction.recentBlockhash = blockhash;
+              transaction.feePayer = fromPubkey;
 
-                console.log('İşlem imzalanıyor...');
-                const signed = await provider.signTransaction(transaction);
-                
-                console.log('İşlem serileştiriliyor...');
-                const serializedTransaction = signed.serialize();
-                
-                console.log('İşlem gönderiliyor...');
-                const signature = await connection.sendRawTransaction(serializedTransaction, {
-                    skipPreflight: false,
-                    maxRetries: 5,
-                    preflightCommitment: 'confirmed'
-                });
-                
-                console.log('İşlem onayı bekleniyor...');
-                const confirmation = await connection.confirmTransaction(signature, 'confirmed');
-                
-                if (confirmation.value.err) {
-                    throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
-                }
+              console.log('İşlem imzalanıyor...');
+              const signed = await provider.signTransaction(transaction);
+              
+              console.log('İşlem serileştiriliyor...');
+              const serializedTransaction = signed.serialize();
+              
+              console.log('İşlem gönderiliyor...');
+              const signature = await connection.sendRawTransaction(serializedTransaction, {
+                  skipPreflight: false,
+                  maxRetries: 5,
+                  preflightCommitment: 'confirmed'
+              });
+              
+              console.log('İşlem onayı bekleniyor...');
+              const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+              
+              if (confirmation.value.err) {
+                  throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
+              }
 
-                console.log('İşlem başarılı:', signature);
-                return true;
+              console.log('İşlem başarılı:', signature);
+              return true;
 
-            } catch (err) {
-                console.error(`İşlem hatası (${retryCount + 1}):`, err);
-                
-                if (err.message.includes('block height exceeded') || err.message.includes('blockhash not found')) {
-                    console.log('İşlem zaman aşımına uğradı, yeniden deneniyor...');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    continue;
-                }
-                
-                if (err.message.includes('403') || err.message.includes('429')) {
-                    console.log('RPC hatası, alternatif endpoint deneniyor...');
-                    currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
-                    await createConnection();
-                } else {
-                    throw err;
-                }
-            }
-            
-            retryCount++;
-            if (retryCount < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            }
-        }
+          } catch (err) {
+              console.error(`İşlem hatası (${retryCount + 1}):`, err);
+              
+              if (err.message.includes('block height exceeded') || err.message.includes('blockhash not found')) {
+                  console.log('İşlem zaman aşımına uğradı, yeniden deneniyor...');
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  continue;
+              }
+              
+              if (err.message.includes('403') || err.message.includes('429')) {
+                  console.log('RPC hatası, alternatif endpoint deneniyor...');
+                  currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
+                  await createConnection();
+              } else {
+                  throw err;
+              }
+          }
+          
+          retryCount++;
+          if (retryCount < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+      }
 
-        throw new Error('Maksimum deneme sayısına ulaşıldı');
+      throw new Error('Maksimum deneme sayısına ulaşıldı');
 
-    } catch (error) {
-        console.error("SOL transfer sırasında hata:", error);
-        alert('Transfer hatası: ' + error.message);
-        return false;
-    }
+  } catch (error) {
+      console.error("SOL transfer sırasında hata:", error);
+      alert('Transfer hatası: ' + error.message);
+      return false;
+  }
 }
 
 // Notları gösterme
@@ -627,7 +627,7 @@ function displayNotes() {
     const endIndex = currentPage * notesPerPage;
     const visibleNotes = notes.slice(startIndex, endIndex);
     if (visibleNotes.length === 0) {
-      notesList.innerHTML = '<p class="no-notes">Henüz hiç not paylaşılmamış.</p>';
+      notesList.innerHTML = '<p class="no-notes">No notes have been shared yet.</p>';
       return;
     }
     visibleNotes.forEach((note) => {
@@ -650,7 +650,7 @@ function displayNotes() {
     });
     loadMoreBtn.style.display = notes.length > 20 && endIndex < notes.length ? 'block' : 'none';
   } catch (error) {
-    console.error("Notlar görüntülenirken hata:", error);
+    console.error("Error displaying notes:", error);
   }
 }
 
@@ -658,12 +658,12 @@ function displayNotes() {
 function vote(noteId, voteType) {
   try {
     if (!walletAddress) {
-      alert('Oy vermek için cüzdanınızı bağlamalısınız!');
+      alert('Please connect your wallet to vote!');
       return;
     }
 
     if (votedNotes.has(noteId)) {
-      alert('Bu nota zaten oy verdiniz!');
+      alert('You have already voted for this note!');
       return;
     }
 
@@ -677,35 +677,35 @@ function vote(noteId, voteType) {
       displayNotes();
     }
   } catch (error) {
-    console.error("Oy verme işlemi sırasında hata:", error);
+    console.error("Error during voting process:", error);
   }
 }
 
 // Event Listener'ları
 document.addEventListener('DOMContentLoaded', () => {
-    try {
-        console.log('Sayfa yüklendi, başlangıç işlemleri yapılıyor...');
-        showSection('home');
-        loadFromLocalStorage();
-        updateWalletDisplay();
-        updateShareFormVisibility();
-        displayNotes();
-        console.log('Başlangıç işlemleri tamamlandı');
-    } catch (error) {
-        console.error("Sayfa yüklenirken hata:", error);
-    }
+  try {
+      console.log('Sayfa yüklendi, başlangıç işlemleri yapılıyor...');
+      showSection('home');
+      loadFromLocalStorage();
+      updateWalletDisplay();
+      updateShareFormVisibility();
+      displayNotes();
+      console.log('Başlangıç işlemleri tamamlandı');
+  } catch (error) {
+      console.error("Sayfa yüklenirken hata:", error);
+  }
 });
 
 // Cüzdan dropdown menüsünü aç/kapa
 walletAddressDiv.addEventListener('click', () => {
-  walletDropdown.classList.toggle('active');
+walletDropdown.classList.toggle('active');
 });
 
 // Sayfa herhangi bir yerine tıklandığında dropdown'ı kapat
 document.addEventListener('click', (event) => {
-  if (!walletDropdown.contains(event.target) && !walletAddressDiv.contains(event.target)) {
-    walletDropdown.classList.remove('active');
-  }
+if (!walletDropdown.contains(event.target) && !walletAddressDiv.contains(event.target)) {
+  walletDropdown.classList.remove('active');
+}
 });
 
 // Cüzdan bağlantı butonları
@@ -714,42 +714,42 @@ disconnectWalletButton.addEventListener('click', disconnectWallet);
 
 // Not paylaşma işlemi
 shareNoteButton.addEventListener('click', async () => {
-  if (!walletAddress) {
-    alert('Not paylaşmak için cüzdanınızı bağlamalısınız!');
-    return;
-  }
+if (!walletAddress) {
+  alert('Please connect your wallet to share a note!');
+  return;
+}
 
-  const content = noteInput.value.trim();
-  if (content.length === 0) {
-    alert('Not boş olamaz!');
-    return;
-  }
+const content = noteInput.value.trim();
+if (content.length === 0) {
+  alert('Note cannot be empty!');
+  return;
+}
 
-  if (content.length > 280) {
-    alert('Not 280 karakterden uzun olamaz!');
-    return;
-  }
+if (content.length > 280) {
+  alert('Note cannot be longer than 280 characters!');
+  return;
+}
 
-  const paymentSuccess = await transferSOL(walletAddress, NOTE_COST);
-  
-  if (!paymentSuccess) {
-    alert('Ödeme başarısız. Lütfen tekrar deneyin.');
-    return;
-  }
+const paymentSuccess = await transferSOL(walletAddress, NOTE_COST);
 
-  const newNote = {
-    id: Date.now(),
-    content: content,
-    likes: 0,
-    dislikes: 0,
-    size: ["small", "medium", "tall"][Math.floor(Math.random() * 3)]
-  };
+if (!paymentSuccess) {
+  alert('Payment failed. Please try again.');
+  return;
+}
 
-  notes.unshift(newNote);
-  noteInput.value = '';
-  currentPage = 1;
-  saveToLocalStorage();
-  displayNotes();
-  showSection('home');
-  alert('Not başarıyla paylaşıldı!');
+const newNote = {
+  id: Date.now(),
+  content: content,
+  likes: 0,
+  dislikes: 0,
+  size: ["small", "medium", "tall"][Math.floor(Math.random() * 3)]
+};
+
+notes.unshift(newNote);
+noteInput.value = '';
+currentPage = 1;
+saveToLocalStorage();
+displayNotes();
+showSection('home');
+alert('Note shared successfully!');
 });
