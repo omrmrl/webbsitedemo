@@ -286,21 +286,21 @@ function showAdminPanel() {
   adminSection.id = 'adminPanel';
   adminSection.className = 'admin-panel';
   adminSection.innerHTML = `
-      <h2>Admin Paneli</h2>
+      <h2>Admin Panel</h2>
       <div class="admin-stats">
-          <p>Toplam Not: ${notes.length}</p>
-          <p>Toplam Beğeni: ${notes.reduce((sum, note) => sum + note.likes, 0)}</p>
-          <p>Toplam Beğenmeme: ${notes.reduce((sum, note) => sum + note.dislikes, 0)}</p>
+          <p>Total Notes: ${notes.length}</p>
+          <p>Total Likes: ${notes.reduce((sum, note) => sum + note.likes, 0)}</p>
+          <p>Total Dislikes: ${notes.reduce((sum, note) => sum + note.dislikes, 0)}</p>
       </div>
       <div class="admin-notes">
-          <h3>Tüm Notlar</h3>
+          <h3>All Notes</h3>
           ${notes.map(note => `
               <div class="admin-note">
                   <p>ID: ${note.id}</p>
                   <textarea id="note-${note.id}">${note.content}</textarea>
                   <div class="admin-buttons">
-                      <button onclick="adminEditNote(${note.id})">Düzenle</button>
-                      <button onclick="adminDeleteNote(${note.id})">Sil</button>
+                      <button onclick="adminEditNote(${note.id})">Edit</button>
+                      <button onclick="adminDeleteNote(${note.id})">Delete</button>
                   </div>
               </div>
           `).join('')}
@@ -309,7 +309,7 @@ function showAdminPanel() {
 
   // Paneli sayfaya ekle
   document.body.appendChild(adminSection);
-  console.log('Admin paneli başarıyla eklendi');
+  console.log('Admin panel added successfully');
 }
 
 // Admin not düzenleme
@@ -320,7 +320,7 @@ async function adminEditNote(noteId) {
 
   const note = notes.find(n => n.id === noteId);
   if (!note) {
-      alert('Not bulunamadı!');
+      alert('Note not found!');
       return;
   }
 
@@ -328,12 +328,12 @@ async function adminEditNote(noteId) {
   const newContent = textarea.value.trim();
 
   if (newContent.length === 0) {
-      alert('Not boş olamaz!');
+      alert('Note cannot be empty!');
       return;
   }
 
   if (newContent.length > 280) {
-      alert('Not 280 karakterden uzun olamaz!');
+      alert('Note cannot be longer than 280 characters!');
       return;
   }
 
@@ -341,7 +341,7 @@ async function adminEditNote(noteId) {
   saveToLocalStorage();
   displayNotes();
   showAdminPanel();
-  alert('Not başarıyla güncellendi!');
+  alert('Note updated successfully!');
 }
 
 // Admin not silme
@@ -352,16 +352,16 @@ async function adminDeleteNote(noteId) {
 
   const noteIndex = notes.findIndex(note => note.id === noteId);
   if (noteIndex === -1) {
-      alert('Not bulunamadı!');
+      alert('Note not found!');
       return;
   }
 
-  if (confirm('Bu notu silmek istediğinizden emin misiniz?')) {
+  if (confirm('Are you sure you want to delete this note?')) {
       notes.splice(noteIndex, 1);
       saveToLocalStorage();
       displayNotes();
       showAdminPanel();
-      alert('Not başarıyla silindi!');
+      alert('Note deleted successfully!');
   }
 }
 
@@ -371,7 +371,7 @@ async function connectWallet() {
     const provider = getProvider();
     
     if (!provider) {
-      alert('Lütfen Phantom cüzdan eklentisini yükleyin!');
+      alert('Please install the Phantom wallet plugin!');
       window.open('https://phantom.app/', '_blank');
       return;
     }
@@ -403,7 +403,9 @@ async function connectWallet() {
     
   } catch (err) {
     console.error("Cüzdan bağlantısında hata:", err);
-    alert('Cüzdan bağlantısı başarısız. Lütfen tekrar deneyin.');
+    alert('Wallet connection failed. Please try again.
+
+');
   }
 }
 
@@ -790,25 +792,25 @@ disconnectWalletButton.addEventListener('click', disconnectWallet);
 // Not paylaşma işlemi
 shareNoteButton.addEventListener('click', async () => {
   if (!walletAddress) {
-    alert('Lütfen not paylaşmak için cüzdanınızı bağlayın!');
+    alert('Please connect your wallet to share notes!');
     return;
   }
 
   const content = noteInput.value.trim();
   if (content.length === 0) {
-    alert('Not boş olamaz!');
+    alert('Note cannot be empty!');
     return;
   }
 
   if (content.length > 280) {
-    alert('Not 280 karakterden uzun olamaz!');
+    alert('Note cannot be longer than 280 characters!');
     return;
   }
 
   const paymentSuccess = await transferSOL(walletAddress, NOTE_COST);
 
   if (!paymentSuccess) {
-    alert('Ödeme başarısız. Lütfen tekrar deneyin.');
+    alert('Payment failed. Please try again.');
     return;
   }
 
@@ -827,5 +829,5 @@ shareNoteButton.addEventListener('click', async () => {
   saveToLocalStorage();
   displayNotes();
   showSection('home');
-  alert('Not başarıyla paylaşıldı!');
+  alert('Note shared successfully!');
 });
