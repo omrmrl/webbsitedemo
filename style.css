@@ -218,31 +218,48 @@ nav {
 
 /* Like & Dislike Butonları */
 .note-buttons {
-  margin-top: auto;
   display: flex;
   justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
 }
 
 .note-buttons button {
-  padding: 5px 10px;
+  flex: 1;
+  padding: 8px 12px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.note-buttons button:hover {
+  background-color: #e0e0e0;
 }
 
 .note-buttons button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .note-buttons .like {
-  background-color: #28a745;
-  color: white;
+  background-color: #e8f5e9;
+}
+
+.note-buttons .like:hover:not(:disabled) {
+  background-color: #c8e6c9;
 }
 
 .note-buttons .dislike {
-  background-color: #dc3545;
-  color: white;
+  background-color: #ffebee;
+}
+
+.note-buttons .dislike:hover:not(:disabled) {
+  background-color: #ffcdd2;
 }
 
 /* Not Paylaş Bölümü */
