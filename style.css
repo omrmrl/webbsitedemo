@@ -8,20 +8,35 @@ body {
 
 header {
   background-color: #007bff;
-  padding: 15px 40px;
+  padding: 10px 20px;
   color: white;
-  position: relative;
-  width: 100%;
-  box-sizing: border-box;
+  height: 60px;
+  display: flex;
+  align-items: center;
 }
 
 nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 3300px; /* 3 katı genişlik */
+  max-width: 1100px;
   margin: 0 auto;
-  padding-left: 80px; /* Logo için daha fazla yer */
+  width: 100%;
+}
+
+/* Logo Styles */
+.logo-container {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+}
+
+.logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
 }
 
 .nav-left {
@@ -29,38 +44,32 @@ nav {
   margin: 0;
   padding: 0;
   display: flex;
-  gap: 40px; /* Menü öğeleri arası boşluk */
+}
+
+.nav-left li {
+  margin-right: 20px;
 }
 
 .nav-left li a {
   color: white;
   text-decoration: none;
   font-weight: bold;
-  font-size: 18px; /* Font boyutunu artır */
-  padding: 8px 16px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
-}
-
-.nav-left li a:hover {
-  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
 }
 
 .wallet-button {
-  padding: 12px 24px;
+  padding: 8px 16px;
   background-color: white;
   color: #007bff;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
-  font-size: 16px;
 }
 
 .wallet-button:hover {
@@ -412,28 +421,4 @@ nav {
 .admin-buttons button:hover {
   opacity: 0.9;
   transform: translateY(-1px);
-}
-
-/* Logo Styles */
-.logo-container {
-    position: absolute;
-    left: 40px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 1000;
-}
-
-.logo {
-    width: 60px; /* Logo boyutunu artır */
-    height: 60px;
-    object-fit: contain;
-}
-
-.header-content {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    width: 100%;
-    position: relative;
 }
