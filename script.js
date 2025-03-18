@@ -403,9 +403,7 @@ async function connectWallet() {
     
   } catch (err) {
     console.error("Cüzdan bağlantısında hata:", err);
-    alert('Wallet connection failed. Please try again.
-
-');
+    alert('Cüzdan bağlantısı başarısız. Lütfen tekrar deneyin.');
   }
 }
 
