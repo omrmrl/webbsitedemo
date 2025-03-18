@@ -343,6 +343,8 @@ async function connectWallet() {
     const provider = getProvider();
     
     if (!provider) {
+      alert('Lütfen Phantom cüzdan eklentisini yükleyin!');
+      window.open('https://phantom.app/', '_blank');
       return;
     }
 
@@ -353,16 +355,22 @@ async function connectWallet() {
 
     const response = await provider.connect();
     walletAddress = response.publicKey.toString();
+    
+    // Cüzdan görünümünü güncelle
     updateWalletDisplay();
+    
+    // Form görünürlüğünü güncelle
     updateShareFormVisibility();
+    
+    // LocalStorage'a kaydet
     saveToLocalStorage();
+    
+    // Notları yeniden yükle
     displayNotes();
     
-    // Admin kontrolü ve panel gösterimi
-    console.log('Cüzdan bağlandı, admin kontrolü yapılıyor');
+    // Admin kontrolü
     if (isAdmin()) {
-        console.log('Admin cüzdan tespit edildi');
-        showAdminPanel();
+      showAdminPanel();
     }
     
   } catch (err) {
@@ -408,15 +416,24 @@ function updateShareFormVisibility() {
 // Bölüm gösterme fonksiyonu
 function showSection(sectionId) {
   try {
+    // Tüm bölümleri gizle
     document.querySelectorAll('.section').forEach(section => {
       section.style.display = 'none';
     });
+    
+    // Hedef bölümü göster
     const targetSection = document.getElementById(sectionId);
     if (targetSection) {
       targetSection.style.display = 'block';
       
+      // Share bölümü için özel kontrol
       if (sectionId === 'share') {
         updateShareFormVisibility();
+      }
+      
+      // Home bölümü için notları yeniden yükle
+      if (sectionId === 'home') {
+        displayNotes();
       }
     }
   } catch (error) {
@@ -626,31 +643,41 @@ function displayNotes() {
     const startIndex = 0;
     const endIndex = currentPage * notesPerPage;
     const visibleNotes = notes.slice(startIndex, endIndex);
+    
     if (visibleNotes.length === 0) {
-      notesList.innerHTML = '<p class="no-notes">No notes have been shared yet.</p>';
+      notesList.innerHTML = '<p class="no-notes">Henüz hiç not paylaşılmadı.</p>';
       return;
     }
+
     visibleNotes.forEach((note) => {
-      const noteDiv = document.createElement('div');
-      noteDiv.className = `note ${note.size}`;
+      const noteElement = document.createElement('div');
+      noteElement.className = `note ${note.size}`;
+      
       const isVoted = votedNotes.has(note.id);
       const buttonsDisabled = !walletAddress || isVoted;
-      noteDiv.innerHTML = `
+      
+      noteElement.innerHTML = `
         <p>${note.content}</p>
         <div class="note-buttons">
           <button class="like" onclick="vote(${note.id}, 'like')" ${buttonsDisabled ? 'disabled' : ''}>
-            Like (${note.likes})
+            👍 Beğen (${note.likes})
           </button>
           <button class="dislike" onclick="vote(${note.id}, 'dislike')" ${buttonsDisabled ? 'disabled' : ''}>
-            Dislike (${note.dislikes})
+            👎 Beğenme (${note.dislikes})
           </button>
         </div>
+        <div class="wallet-address-display ${isAdmin() ? 'admin' : ''}">
+          <span class="short-address">${shortenAddress(note.walletAddress || '')}</span>
+          <span class="full-address">${note.walletAddress || ''}</span>
+        </div>
       `;
-      notesList.appendChild(noteDiv);
+      
+      notesList.appendChild(noteElement);
     });
-    loadMoreBtn.style.display = notes.length > 20 && endIndex < notes.length ? 'block' : 'none';
+    
+    loadMoreBtn.style.display = notes.length > notesPerPage && endIndex < notes.length ? 'block' : 'none';
   } catch (error) {
-    console.error("Error displaying notes:", error);
+    console.error("Notlar gösterilirken hata:", error);
   }
 }
 
@@ -684,15 +711,26 @@ function vote(noteId, voteType) {
 // Event Listener'ları
 document.addEventListener('DOMContentLoaded', () => {
   try {
-      console.log('Sayfa yüklendi, başlangıç işlemleri yapılıyor...');
-      showSection('home');
-      loadFromLocalStorage();
-      updateWalletDisplay();
-      updateShareFormVisibility();
-      displayNotes();
-      console.log('Başlangıç işlemleri tamamlandı');
+    console.log('Sayfa yüklendi, başlangıç işlemleri yapılıyor...');
+    
+    // LocalStorage'dan verileri yükle
+    loadFromLocalStorage();
+    
+    // Cüzdan görünümünü güncelle
+    updateWalletDisplay();
+    
+    // Form görünürlüğünü güncelle
+    updateShareFormVisibility();
+    
+    // Ana sayfayı göster
+    showSection('home');
+    
+    // Notları göster
+    displayNotes();
+    
+    console.log('Başlangıç işlemleri tamamlandı');
   } catch (error) {
-      console.error("Sayfa yüklenirken hata:", error);
+    console.error("Sayfa yüklenirken hata:", error);
   }
 });
 
