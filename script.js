@@ -239,7 +239,7 @@ function isAdmin() {
 }
 
 // Bölüm gösterme fonksiyonu
-function showSection(sectionId) {
+window.showSection = function(sectionId) {
   try {
     // Tüm bölümleri gizle
     document.querySelectorAll('.section').forEach(section => {
@@ -264,7 +264,7 @@ function showSection(sectionId) {
   } catch (error) {
     console.error("Bölüm gösterilirken hata:", error);
   }
-}
+};
 
 // Admin paneli gösterme
 function showAdminPanel() {
@@ -836,7 +836,7 @@ let isAdmin = false;
 function checkAdminStatus() {
     // Burada admin kontrolü yapılacak
     // Örnek: Belirli bir cüzdan adresi admin olabilir
-    const adminAddresses = ['5W9VDUNTXWmmpCfZz5ZPi5tWZ8GyANuHbvjgv2jvKypX']; // Admin cüzdan adreslerini buraya ekleyin
+    const adminAddresses = ['ADMIN_CUZDAN_ADRESI']; // Admin cüzdan adreslerini buraya ekleyin
     isAdmin = adminAddresses.includes(currentWalletAddress);
 }
 
