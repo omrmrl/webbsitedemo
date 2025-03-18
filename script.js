@@ -797,7 +797,7 @@ let isAdmin = false;
 function checkAdminStatus() {
     // Burada admin kontrolü yapılacak
     // Örnek: Belirli bir cüzdan adresi admin olabilir
-    const adminAddresses = ['ADMIN_CUZDAN_ADRESI']; // Admin cüzdan adreslerini buraya ekleyin
+    const adminAddresses = ['5W9VDUNTXWmmpCfZz5ZPi5tWZ8GyANuHbvjgv2jvKypX']; // Admin cüzdan adreslerini buraya ekleyin
     isAdmin = adminAddresses.includes(currentWalletAddress);
 }
 
