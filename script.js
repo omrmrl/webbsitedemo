@@ -661,10 +661,10 @@ function displayNotes() {
         <p>${note.content}</p>
         <div class="note-buttons">
           <button class="like" onclick="vote(${note.id}, 'like')" ${buttonsDisabled ? 'disabled' : ''}>
-            👍 Beğen (${note.likes})
+            Like (${note.likes})
           </button>
           <button class="dislike" onclick="vote(${note.id}, 'dislike')" ${buttonsDisabled ? 'disabled' : ''}>
-            👎 Beğenme (${note.dislikes})
+            Dislike (${note.dislikes})
           </button>
         </div>
         <div class="wallet-address-display ${isAdminUser ? 'admin' : ''}">
