@@ -736,14 +736,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Cüzdan dropdown menüsünü aç/kapa
 walletAddressDiv.addEventListener('click', () => {
-walletDropdown.classList.toggle('active');
+  walletDropdown.classList.toggle('active');
 });
 
 // Sayfa herhangi bir yerine tıklandığında dropdown'ı kapat
 document.addEventListener('click', (event) => {
-if (!walletDropdown.contains(event.target) && !walletAddressDiv.contains(event.target)) {
-  walletDropdown.classList.remove('active');
-}
+  if (!walletDropdown.contains(event.target) && !walletAddressDiv.contains(event.target)) {
+    walletDropdown.classList.remove('active');
+  }
 });
 
 // Cüzdan bağlantı butonları
@@ -752,44 +752,45 @@ disconnectWalletButton.addEventListener('click', disconnectWallet);
 
 // Not paylaşma işlemi
 shareNoteButton.addEventListener('click', async () => {
-if (!walletAddress) {
-  alert('Please connect your wallet to share a note!');
-  return;
-}
+  if (!walletAddress) {
+    alert('Lütfen not paylaşmak için cüzdanınızı bağlayın!');
+    return;
+  }
 
-const content = noteInput.value.trim();
-if (content.length === 0) {
-  alert('Note cannot be empty!');
-  return;
-}
+  const content = noteInput.value.trim();
+  if (content.length === 0) {
+    alert('Not boş olamaz!');
+    return;
+  }
 
-if (content.length > 280) {
-  alert('Note cannot be longer than 280 characters!');
-  return;
-}
+  if (content.length > 280) {
+    alert('Not 280 karakterden uzun olamaz!');
+    return;
+  }
 
-const paymentSuccess = await transferSOL(walletAddress, NOTE_COST);
+  const paymentSuccess = await transferSOL(walletAddress, NOTE_COST);
 
-if (!paymentSuccess) {
-  alert('Payment failed. Please try again.');
-  return;
-}
+  if (!paymentSuccess) {
+    alert('Ödeme başarısız. Lütfen tekrar deneyin.');
+    return;
+  }
 
-const newNote = {
-  id: Date.now(),
-  content: content,
-  likes: 0,
-  dislikes: 0,
-  size: ["small", "medium", "tall"][Math.floor(Math.random() * 3)]
-};
+  const newNote = {
+    id: Date.now(),
+    content: content,
+    likes: 0,
+    dislikes: 0,
+    size: ["small", "medium", "tall"][Math.floor(Math.random() * 3)],
+    walletAddress: walletAddress
+  };
 
-notes.unshift(newNote);
-noteInput.value = '';
-currentPage = 1;
-saveToLocalStorage();
-displayNotes();
-showSection('home');
-alert('Note shared successfully!');
+  notes.unshift(newNote);
+  noteInput.value = '';
+  currentPage = 1;
+  saveToLocalStorage();
+  displayNotes();
+  showSection('home');
+  alert('Not başarıyla paylaşıldı!');
 });
 
 // Cüzdan adresini kısaltma fonksiyonu
