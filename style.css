@@ -781,3 +781,37 @@ nav {
     max-width: 200px;
   }
 }
+
+/* Cüzdan Adresi Gösterimi */
+.wallet-address-display {
+  font-size: 12px;
+  color: #666;
+  margin-top: 8px;
+  font-family: monospace;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.wallet-address-display:hover {
+  color: #007bff;
+}
+
+.wallet-address-display.admin {
+  cursor: default;
+}
+
+.wallet-address-display.admin:hover {
+  color: #666;
+}
+
+.wallet-address-display .full-address {
+  display: none;
+}
+
+.wallet-address-display.admin .full-address {
+  display: inline;
+}
+
+.wallet-address-display.admin .short-address {
+  display: none;
+}
