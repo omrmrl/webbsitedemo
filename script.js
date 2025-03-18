@@ -377,7 +377,7 @@ async function connectWallet() {
     }
 
     if (walletAddress) {
-      console.log('Cüzdan zaten bağlı');
+      console.log('Wallet is already connected');
       return;
     }
 
@@ -402,8 +402,8 @@ async function connectWallet() {
     }
     
   } catch (err) {
-    console.error("Cüzdan bağlantısında hata:", err);
-    alert('Cüzdan bağlantısı başarısız. Lütfen tekrar deneyin.');
+    console.error("Error connecting wallet:", err);
+    alert('Failed to connect wallet. Please try again.');
   }
 }
 
@@ -471,56 +471,56 @@ function loadMore() {
 // Transfer işlemi için güvenlik kontrolleri
 async function checkTransactionSafety(fromWallet, amount) {
   try {
-      console.log('Güvenlik kontrolü başlatılıyor...');
+      console.log('Starting security check...');
       
       // Phantom cüzdan kontrolü
       const provider = getProvider();
       if (!provider) {
-          throw new Error('Phantom cüzdan bağlantısı bulunamadı');
+          throw new Error('Phantom wallet connection not found');
       }
 
       // Ağ kontrolü - Phantom bağlantısı üzerinden
       try {
           await provider.disconnect();
           const resp = await provider.connect();
-          console.log('Cüzdan bağlantı durumu:', resp);
+          console.log('Wallet connection status:', resp);
           
           // Cüzdan adresini kontrol et
           if (resp.publicKey.toString() !== fromWallet) {
-              throw new Error('Cüzdan adresi eşleşmiyor. Lütfen doğru cüzdanın bağlı olduğundan emin olun.');
+              throw new Error('Wallet address mismatch. Please make sure the correct wallet is connected.');
           }
       } catch (networkError) {
-          console.error('Ağ kontrolü hatası:', networkError);
-          throw new Error('Cüzdan bağlantısı kontrol edilirken hata oluştu. Lütfen Phantom ayarlarınızı kontrol edin.');
+          console.error('Network check error:', networkError);
+          throw new Error('Error checking wallet connection. Please check your Phantom settings.');
       }
 
       // Bağlantı kontrolü
       if (!connection) {
-          console.log('Bağlantı yok, yeni bağlantı oluşturuluyor...');
+          console.log('No connection, creating new connection...');
           await createConnection();
       }
 
       // Bakiye kontrolü
-      console.log('Bakiye kontrolü yapılıyor...');
+      console.log('Checking balance...');
       const pubKey = new solanaWeb3.PublicKey(fromWallet);
       
       // Bakiyeyi sorgula
       const balance = await connection.getBalance(pubKey, 'confirmed');
       const balanceInSol = balance / solanaWeb3.LAMPORTS_PER_SOL;
-      console.log('Mevcut bakiye:', balanceInSol, 'SOL');
+      console.log('Current balance:', balanceInSol, 'SOL');
 
       // Minimum bakiye kontrolü
       const minBalance = (amount + 0.001) * solanaWeb3.LAMPORTS_PER_SOL;
       if (balance < minBalance) {
           const requiredMore = (minBalance - balance) / solanaWeb3.LAMPORTS_PER_SOL;
-          throw new Error(`Yetersiz bakiye! İşlem için ${(amount + 0.001).toFixed(4)} SOL gerekli. Mevcut bakiye: ${balanceInSol.toFixed(4)} SOL. ${requiredMore.toFixed(4)} SOL daha gerekli.`);
+          throw new Error(`Insufficient balance! Required: ${(amount + 0.001).toFixed(4)} SOL. Current balance: ${balanceInSol.toFixed(4)} SOL. Need ${requiredMore.toFixed(4)} SOL more.`);
       }
 
-      console.log('Bakiye yeterli, işlem devam edebilir');
+      console.log('Balance sufficient, transaction can proceed');
       return true;
 
   } catch (error) {
-      console.error("Güvenlik kontrolü sırasında hata:", error);
+      console.error("Error during security check:", error);
       alert(error.message);
       return false;
   }
@@ -529,25 +529,25 @@ async function checkTransactionSafety(fromWallet, amount) {
 // SOL transfer işlemi
 async function transferSOL(fromWallet, amount) {
   try {
-      console.log('Transfer başlatılıyor...', { fromWallet, amount });
+      console.log('Starting transfer...', { fromWallet, amount });
       
       const provider = getProvider();
       if (!provider) {
-          throw new Error('Phantom cüzdan bağlantısı bulunamadı');
+          throw new Error('Phantom wallet connection not found');
       }
 
       // Basit bağlantı kontrolü
       try {
           await provider.request({ method: "connect" });
       } catch (connError) {
-          console.error('Cüzdan bağlantı hatası:', connError);
-          throw new Error('Cüzdan bağlantısı kurulamadı. Lütfen Phantom cüzdanınızın bağlı olduğundan emin olun.');
+          console.error('Wallet connection error:', connError);
+          throw new Error('Failed to establish wallet connection. Please make sure your Phantom wallet is connected.');
       }
 
       if (!connection) {
           const connected = await createConnection();
           if (!connected) {
-              throw new Error('Ağ bağlantısı kurulamadı');
+              throw new Error('Failed to establish network connection');
           }
       }
 
@@ -556,7 +556,7 @@ async function transferSOL(fromWallet, amount) {
           return false;
       }
 
-      console.log('İşlem hazırlanıyor...');
+      console.log('Preparing transaction...');
       const fromPubkey = new solanaWeb3.PublicKey(fromWallet);
       const toPubkey = new solanaWeb3.PublicKey(RECEIVER_ADDRESS);
       const lamports = Math.floor(amount * solanaWeb3.LAMPORTS_PER_SOL);
@@ -566,7 +566,7 @@ async function transferSOL(fromWallet, amount) {
       
       while (retryCount < maxRetries) {
           try {
-              console.log('Blockhash alınıyor...');
+              console.log('Getting blockhash...');
               const { blockhash } = await connection.getLatestBlockhash('confirmed');
               
               const transaction = new solanaWeb3.Transaction().add(
@@ -580,40 +580,40 @@ async function transferSOL(fromWallet, amount) {
               transaction.recentBlockhash = blockhash;
               transaction.feePayer = fromPubkey;
 
-              console.log('İşlem imzalanıyor...');
+              console.log('Signing transaction...');
               const signed = await provider.signTransaction(transaction);
               
-              console.log('İşlem serileştiriliyor...');
+              console.log('Serializing transaction...');
               const serializedTransaction = signed.serialize();
               
-              console.log('İşlem gönderiliyor...');
+              console.log('Sending transaction...');
               const signature = await connection.sendRawTransaction(serializedTransaction, {
                   skipPreflight: false,
                   maxRetries: 5,
                   preflightCommitment: 'confirmed'
               });
               
-              console.log('İşlem onayı bekleniyor...');
+              console.log('Waiting for confirmation...');
               const confirmation = await connection.confirmTransaction(signature, 'confirmed');
               
               if (confirmation.value.err) {
-                  throw new Error('İşlem onaylanmadı: ' + JSON.stringify(confirmation.value.err));
+                  throw new Error('Transaction not confirmed: ' + JSON.stringify(confirmation.value.err));
               }
 
-              console.log('İşlem başarılı:', signature);
+              console.log('Transaction successful:', signature);
               return true;
 
           } catch (err) {
-              console.error(`İşlem hatası (${retryCount + 1}):`, err);
+              console.error(`Transaction error (${retryCount + 1}):`, err);
               
               if (err.message.includes('block height exceeded') || err.message.includes('blockhash not found')) {
-                  console.log('İşlem zaman aşımına uğradı, yeniden deneniyor...');
+                  console.log('Transaction timed out, retrying...');
                   await new Promise(resolve => setTimeout(resolve, 1000));
                   continue;
               }
               
               if (err.message.includes('403') || err.message.includes('429')) {
-                  console.log('RPC hatası, alternatif endpoint deneniyor...');
+                  console.log('RPC error, trying alternative endpoint...');
                   currentEndpointIndex = (currentEndpointIndex + 1) % RPC_ENDPOINTS.length;
                   await createConnection();
               } else {
@@ -627,11 +627,11 @@ async function transferSOL(fromWallet, amount) {
           }
       }
 
-      throw new Error('Maksimum deneme sayısına ulaşıldı');
+      throw new Error('Maximum retry attempts reached');
 
   } catch (error) {
-      console.error("SOL transfer sırasında hata:", error);
-      alert('Transfer hatası: ' + error.message);
+      console.error("Error during SOL transfer:", error);
+      alert('Transfer error: ' + error.message);
       return false;
   }
 }
