@@ -66,10 +66,20 @@
             <h1>Share Note</h1>
             <div id="shareForm">
                 <textarea id="noteInput" placeholder="Write your note (max 280 characters)" maxlength="280"></textarea>
+                <div class="payment-info">
+                    <p>Cost per note: 0.1 SOL</p>
+                </div>
                 <button id="shareNote">Share</button>
             </div>
             <div id="walletWarning" class="wallet-warning">
-                Please connect your wallet to share notes
+                <p class="warning-title">Wallet Status</p>
+                <div class="warning-messages">
+                    <p class="warning-message" id="connect-warning">Please connect your wallet to share notes</p>
+                    <p class="warning-message" id="balance-warning">Insufficient balance. Required: 0.1 SOL</p>
+                    <p class="warning-message" id="network-warning">Please switch to Solana Mainnet</p>
+                    <p class="warning-message" id="transaction-warning">Transaction in progress...</p>
+                    <p class="warning-message" id="error-warning">An error occurred. Please try again.</p>
+                </div>
             </div>
         </div>
 
@@ -129,7 +139,7 @@
     </div>
 
     <footer class="main-footer">
-        <p class="copyright">© 2025 Note Sharing Platform. All rights reserved.</p>
+        <p class="copyright">© 2024 Not Paylaşım Platformu. Tüm hakları saklıdır.</p>
     </footer>
 
     <script src="script.js"></script>
