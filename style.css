@@ -231,23 +231,23 @@ nav {
 .note-buttons {
   display: flex;
   justify-content: space-between;
-  gap: 5px;
+  gap: 10px;
   margin-top: auto;
-  width: 100%;
+  width: 90%;
   box-sizing: border-box;
   position: absolute;
-  bottom: 20px;
-  left: 20px;
-  right: 20px;
+  bottom: 15px;
+  left: 5%;
+  right: 5%;
 }
 
 .note-buttons button {
   flex: 1;
-  padding: 5px 10px;
+  padding: 3px 8px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   transition: all 0.3s ease;
   background-color: #f0f0f0;
   color: #333;
@@ -255,6 +255,7 @@ nav {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  height: 24px;
 }
 
 .note-buttons button:hover {
