@@ -238,6 +238,34 @@ function isAdmin() {
   return walletAddress === ADMIN_WALLET;
 }
 
+// Bölüm gösterme fonksiyonu
+function showSection(sectionId) {
+  try {
+    // Tüm bölümleri gizle
+    document.querySelectorAll('.section').forEach(section => {
+      section.style.display = 'none';
+    });
+    
+    // Hedef bölümü göster
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+      targetSection.style.display = 'block';
+      
+      // Share bölümü için özel kontrol
+      if (sectionId === 'share') {
+        updateShareFormVisibility();
+      }
+      
+      // Home bölümü için notları yeniden yükle
+      if (sectionId === 'home') {
+        displayNotes();
+      }
+    }
+  } catch (error) {
+    console.error("Bölüm gösterilirken hata:", error);
+  }
+}
+
 // Admin paneli gösterme
 function showAdminPanel() {
   console.log('Show admin panel function called');
@@ -410,34 +438,6 @@ function updateShareFormVisibility() {
     }
   } catch (error) {
     console.error("Form görünürlüğü güncellenirken hata:", error);
-  }
-}
-
-// Bölüm gösterme fonksiyonu
-function showSection(sectionId) {
-  try {
-    // Tüm bölümleri gizle
-    document.querySelectorAll('.section').forEach(section => {
-      section.style.display = 'none';
-    });
-    
-    // Hedef bölümü göster
-    const targetSection = document.getElementById(sectionId);
-    if (targetSection) {
-      targetSection.style.display = 'block';
-      
-      // Share bölümü için özel kontrol
-      if (sectionId === 'share') {
-        updateShareFormVisibility();
-      }
-      
-      // Home bölümü için notları yeniden yükle
-      if (sectionId === 'home') {
-        displayNotes();
-      }
-    }
-  } catch (error) {
-    console.error("Bölüm gösterilirken hata:", error);
   }
 }
 
