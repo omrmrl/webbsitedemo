@@ -8,18 +8,20 @@ body {
 
 header {
   background-color: #007bff;
-  padding: 10px 20px;
+  padding: 15px 40px;
   color: white;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 1100px;
+  max-width: 3300px; /* 3 katı genişlik */
   margin: 0 auto;
-  padding-left: 60px; /* Logo için yer açıyoruz */
+  padding-left: 80px; /* Logo için daha fazla yer */
 }
 
 .nav-left {
@@ -27,32 +29,38 @@ nav {
   margin: 0;
   padding: 0;
   display: flex;
-}
-
-.nav-left li {
-  margin-right: 20px;
+  gap: 40px; /* Menü öğeleri arası boşluk */
 }
 
 .nav-left li a {
   color: white;
   text-decoration: none;
   font-weight: bold;
+  font-size: 18px; /* Font boyutunu artır */
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.nav-left li a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 20px;
 }
 
 .wallet-button {
-  padding: 8px 16px;
+  padding: 12px 24px;
   background-color: white;
   color: #007bff;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
+  font-size: 16px;
 }
 
 .wallet-button:hover {
@@ -409,15 +417,15 @@ nav {
 /* Logo Styles */
 .logo-container {
     position: absolute;
-    left: 20px;
+    left: 40px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 1000;
 }
 
 .logo {
-    width: 40px;
-    height: 40px;
+    width: 60px; /* Logo boyutunu artır */
+    height: 60px;
     object-fit: contain;
 }
 
