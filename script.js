@@ -193,17 +193,39 @@ function saveToLocalStorage() {
 // Phantom cüzdan kontrolü
 const getProvider = () => {
   try {
-    if ('phantom' in window) {
-      const provider = window.phantom?.solana;
-
-      if (provider?.isPhantom) {
-        return provider;
+    // Mobil cihaz kontrolü
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Mobil cihazlarda Phantom kontrolü
+      if ('solana' in window) {
+        const provider = window.solana;
+        if (provider?.isPhantom) {
+          return provider;
+        }
       }
+      // Phantom mobil uygulama kontrolü
+      if ('phantom' in window) {
+        const provider = window.phantom?.solana;
+        if (provider?.isPhantom) {
+          return provider;
+        }
+      }
+      alert('Please install the Phantom mobile app or use a desktop browser!');
+      window.open('https://phantom.app/download', '_blank');
+      return null;
+    } else {
+      // Masaüstü tarayıcı kontrolü
+      if ('phantom' in window) {
+        const provider = window.phantom?.solana;
+        if (provider?.isPhantom) {
+          return provider;
+        }
+      }
+      alert('Please install the Phantom wallet extension!');
+      window.open('https://phantom.app/', '_blank');
+      return null;
     }
-    // Phantom yüklü değilse uyarı göster
-    alert('Please install the Phantom wallet extension!');
-    window.open('https://phantom.app/', '_blank');
-    return null;
   } catch (error) {
     console.error("Error checking Phantom provider:", error);
     return null;
@@ -371,8 +393,6 @@ async function connectWallet() {
     const provider = getProvider();
     
     if (!provider) {
-      alert('Please install the Phantom wallet plugin!');
-      window.open('https://phantom.app/', '_blank');
       return;
     }
 
@@ -381,8 +401,24 @@ async function connectWallet() {
       return;
     }
 
-    const response = await provider.connect();
-    walletAddress = response.publicKey.toString();
+    // Mobil cihaz kontrolü
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Mobil cihazlarda bağlantı işlemi
+      try {
+        const response = await provider.connect();
+        walletAddress = response.publicKey.toString();
+      } catch (mobileError) {
+        console.error("Mobile wallet connection error:", mobileError);
+        alert('Failed to connect mobile wallet. Please make sure you are using the Phantom mobile app.');
+        return;
+      }
+    } else {
+      // Masaüstü bağlantı işlemi
+      const response = await provider.connect();
+      walletAddress = response.publicKey.toString();
+    }
     
     // Cüzdan görünümünü güncelle
     updateWalletDisplay();
