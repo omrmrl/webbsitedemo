@@ -801,9 +801,9 @@ function updateWarningMessages() {
 
 // Footer telif hakkı metnini güncelle
 function updateFooter() {
-    const footer = document.querySelector('footer');
+    const footer = document.querySelector('.main-footer .copyright');
     if (footer) {
-        footer.innerHTML = '<p>&copy; 2024 NoteChain. All rights reserved.</p>';
+        footer.textContent = '© 2024 Not Paylaşım Platformu. Tüm hakları saklıdır.';
     }
 }
 
