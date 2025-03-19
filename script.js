@@ -413,12 +413,18 @@ async function connectWallet() {
     if (isMobile) {
       // Mobil cihazlarda bağlantı işlemi
       try {
-        // Mobil cihazlarda bağlantı isteği
-        const response = await provider.connect({ onlyIfTrusted: false });
-        if (response && response.publicKey) {
-          walletAddress = response.publicKey.toString();
+        // Önce mevcut bağlantıyı kontrol et
+        const currentConnection = await provider.connect({ onlyIfTrusted: true }).catch(() => null);
+        if (currentConnection?.publicKey) {
+          walletAddress = currentConnection.publicKey.toString();
         } else {
-          throw new Error('No public key received from wallet');
+          // Mevcut bağlantı yoksa yeni bağlantı iste
+          const response = await provider.connect({ onlyIfTrusted: false });
+          if (response?.publicKey) {
+            walletAddress = response.publicKey.toString();
+          } else {
+            throw new Error('No public key received from wallet');
+          }
         }
       } catch (mobileError) {
         console.error("Mobile wallet connection error:", mobileError);
@@ -437,6 +443,11 @@ async function connectWallet() {
       walletAddress = response.publicKey.toString();
     }
     
+    // Bağlantı başarılı mı kontrol et
+    if (!walletAddress) {
+      throw new Error('Failed to get wallet address');
+    }
+
     // Cüzdan görünümünü güncelle
     updateWalletDisplay();
     
@@ -475,7 +486,7 @@ async function disconnectWallet() {
     displayNotes();
     walletDropdown.classList.remove('active');
   } catch (error) {
-    console.error("Cüzdan bağlantısı kesilirken hata:", error);
+    console.error("Error disconnecting wallet:", error);
   }
 }
 
