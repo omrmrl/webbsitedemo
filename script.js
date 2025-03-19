@@ -803,7 +803,7 @@ function updateWarningMessages() {
 function updateFooter() {
     const footer = document.querySelector('.main-footer .copyright');
     if (footer) {
-        footer.textContent = '© 2024 Not Paylaşım Platformu. Tüm hakları saklıdır.';
+        footer.textContent = '© 2025 Walletnotes.All right reserved.';
     }
 }
 
