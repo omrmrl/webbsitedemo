@@ -211,6 +211,12 @@ const getProvider = () => {
           return provider;
         }
       }
+      // Mobil cihazlarda deep linking için özel kontrol
+      if (window.location.protocol === 'https:') {
+        const deepLink = `https://phantom.app/ul/browse/${window.location.hostname}`;
+        window.location.href = deepLink;
+        return null;
+      }
       alert('Please install the Phantom mobile app or use a desktop browser!');
       window.open('https://phantom.app/download', '_blank');
       return null;
@@ -407,10 +413,21 @@ async function connectWallet() {
     if (isMobile) {
       // Mobil cihazlarda bağlantı işlemi
       try {
-        const response = await provider.connect();
-        walletAddress = response.publicKey.toString();
+        // Mobil cihazlarda bağlantı isteği
+        const response = await provider.connect({ onlyIfTrusted: false });
+        if (response && response.publicKey) {
+          walletAddress = response.publicKey.toString();
+        } else {
+          throw new Error('No public key received from wallet');
+        }
       } catch (mobileError) {
         console.error("Mobile wallet connection error:", mobileError);
+        // Bağlantı hatası durumunda deep linking denemesi
+        if (window.location.protocol === 'https:') {
+          const deepLink = `https://phantom.app/ul/browse/${window.location.hostname}`;
+          window.location.href = deepLink;
+          return;
+        }
         alert('Failed to connect mobile wallet. Please make sure you are using the Phantom mobile app.');
         return;
       }
